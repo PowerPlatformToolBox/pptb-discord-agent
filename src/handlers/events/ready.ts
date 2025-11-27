@@ -4,12 +4,12 @@
 
 import { Events, type Client } from 'discord.js';
 import { getLogger } from '../../utils/logger';
-import type { BotEvent } from '../../types';
+import type { ReadyEvent } from '../../types';
 
-export const readyEvent: BotEvent = {
+export const readyEvent: ReadyEvent = {
   name: Events.ClientReady,
   once: true,
-  async execute(client: Client): Promise<void> {
+  async execute(client: Client<true>): Promise<void> {
     const logger = getLogger();
     logger.info('Bot logged in', {
       username: client.user.tag,

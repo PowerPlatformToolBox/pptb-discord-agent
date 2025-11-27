@@ -73,11 +73,11 @@ export class GitHubIssueService {
         per_page: 10,
       });
 
-      const repos = response.data.map((repo) => ({
+      const repos: GitHubRepository[] = response.data.map((repo) => ({
         name: repo.name,
         description: repo.description ?? undefined,
         html_url: repo.html_url,
-        stargazers_count: repo.stargazers_count,
+        stargazers_count: repo.stargazers_count ?? 0,
         language: repo.language ?? undefined,
       }));
 

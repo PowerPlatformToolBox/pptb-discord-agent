@@ -2,13 +2,13 @@
  * Message reaction add event handler
  */
 
-import { Events, type MessageReaction, type User, type TextChannel } from 'discord.js';
+import { Events, type MessageReaction, type User, type TextChannel, ChannelType } from 'discord.js';
 import { getConfig } from '../../config/config';
 import { getLogger } from '../../utils/logger';
 import { createMessageLogEmbed, createErrorEmbed } from '../../utils/embedBuilder';
-import type { BotEvent } from '../../types';
+import type { MessageReactionAddEvent } from '../../types';
 
-export const messageReactionAddEvent: BotEvent = {
+export const messageReactionAddEvent: MessageReactionAddEvent = {
   name: Events.MessageReactionAdd,
   async execute(reaction: MessageReaction, user: User): Promise<void> {
     const logger = getLogger();
@@ -58,7 +58,9 @@ export const messageReactionAddEvent: BotEvent = {
         return;
       }
 
-      const embed = createMessageLogEmbed(message, reaction, user);
+      // Ensure message is fully fetched (not partial)
+      const fullMessage = message.partial ? await message.fetch() : message;
+      const embed = createMessageLogEmbed(fullMessage, reaction, user);
       await (logChannel as TextChannel).send({ embeds: [embed] });
 
       logger.info('Message logged successfully', {
@@ -78,8 +80,13 @@ export const messageReactionAddEvent: BotEvent = {
           'Failed to log message. Please check bot permissions and configuration.'
         );
 
-        if (reaction.message.channel.isTextBased()) {
-          await reaction.message.channel.send({ embeds: [errorEmbed] });
+        const channel = reaction.message.channel;
+        if (
+          channel.type === ChannelType.GuildText ||
+          channel.type === ChannelType.DM ||
+          channel.type === ChannelType.GuildAnnouncement
+        ) {
+          await channel.send({ embeds: [errorEmbed] });
         }
       } catch (sendError) {
         logger.error('Failed to send error message', { error: sendError });

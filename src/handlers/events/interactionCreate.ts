@@ -4,9 +4,9 @@
 
 import { Events, type Interaction, type ChatInputCommandInteraction } from 'discord.js';
 import { getLogger } from '../../utils/logger';
-import type { BotEvent, BotCommand } from '../../types';
+import type { InteractionCreateEvent, BotCommand } from '../../types';
 
-export const interactionCreateEvent: BotEvent = {
+export const interactionCreateEvent: InteractionCreateEvent = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction): Promise<void> {
     const logger = getLogger();
