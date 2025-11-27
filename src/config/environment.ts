@@ -1,0 +1,36 @@
+/**
+ * Environment variable schema and validation
+ */
+
+import { z } from 'zod';
+import { config as dotenvConfig } from 'dotenv';
+import type { EnvironmentVariables } from '../types';
+
+// Load environment variables
+dotenvConfig();
+
+const environmentSchema = z.object({
+  DISCORD_BOT_TOKEN: z.string().min(1, 'DISCORD_BOT_TOKEN is required'),
+  DISCORD_CLIENT_ID: z.string().min(1, 'DISCORD_CLIENT_ID is required'),
+  DISCORD_GUILD_ID: z.string().optional(),
+  GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required'),
+  GITHUB_ORG: z.string().default('PowerPlatformToolBox'),
+  LOG_CHANNEL_ID: z.string().min(1, 'LOG_CHANNEL_ID is required'),
+  REACTION_EMOJI: z.string().default('⭐'),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+});
+
+/**
+ * Validate and return environment variables
+ */
+export function validateEnvironment(): EnvironmentVariables {
+  const result = environmentSchema.safeParse(process.env);
+
+  if (!result.success) {
+    const errors = result.error.errors.map((err) => `${err.path.join('.')}: ${err.message}`);
+    throw new Error(`Environment validation failed:\n${errors.join('\n')}`);
+  }
+
+  return result.data;
+}
