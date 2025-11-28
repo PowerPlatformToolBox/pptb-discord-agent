@@ -1,0 +1,62 @@
+/**
+ * GitHub webhook type definitions
+ */
+
+export interface GitHubWebhookPayload {
+  action: string;
+  sender: {
+    login: string;
+    avatar_url: string;
+  };
+  repository: {
+    name: string;
+    full_name: string;
+    html_url: string;
+  };
+  projects_v2_item?: {
+    id: string;
+    node_id: string;
+  };
+  release?: {
+    tag_name: string;
+    name: string;
+    body: string;
+    html_url: string;
+    draft: boolean;
+    prerelease: boolean;
+    published_at: string;
+    author: {
+      login: string;
+      avatar_url: string;
+    };
+  };
+  issue?: {
+    number: number;
+    title: string;
+    body: string;
+    html_url: string;
+    labels: Array<{ name: string; color: string }>;
+    user: {
+      login: string;
+      avatar_url: string;
+    };
+  };
+  pull_request?: {
+    number: number;
+    title: string;
+    body: string;
+    html_url: string;
+    user: {
+      login: string;
+      avatar_url: string;
+    };
+  };
+}
+
+export interface WebhookConfig {
+  port: number;
+  secret?: string;
+  projectThreadChannel: string;
+  releaseAnnouncementChannel: string;
+  projectDiscussionLabel: string;
+}
