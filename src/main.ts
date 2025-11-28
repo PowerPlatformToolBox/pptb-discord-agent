@@ -8,7 +8,11 @@ import { join } from 'node:path';
 import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
 import { getLogger } from './utils/logger';
+import { createWebhookServer } from './services/webhook/webhookServer';
+import { handleProjectItem } from './services/webhook/handlers/projectItem';
+import { handleRelease } from './services/webhook/handlers/release';
 import type { BotCommand, BotEvent } from './types';
+import type { GitHubWebhookPayload } from './types/webhook';
 
 declare module 'discord.js' {
   interface Client {
@@ -76,6 +80,31 @@ async function main(): Promise<void> {
       }
     }
 
+    // Setup webhook handlers
+    const webhookHandlers = new Map<
+      string,
+      (payload: GitHubWebhookPayload) => Promise<void>
+    >();
+
+    // Handle issues (for project items)
+    webhookHandlers.set('issues', async (payload) => {
+      await handleProjectItem(payload, client);
+    });
+
+    // Handle pull requests (for project items)
+    webhookHandlers.set('pull_request', async (payload) => {
+      await handleProjectItem(payload, client);
+    });
+
+    // Handle releases
+    webhookHandlers.set('release', async (payload) => {
+      await handleRelease(payload, client);
+    });
+
+    // Create and start webhook server
+    const webhookServer = createWebhookServer(webhookHandlers);
+    webhookServer.setDiscordClient(client);
+
     // Global error handlers
     process.on('unhandledRejection', (error: Error) => {
       logger.error('Unhandled promise rejection', {
@@ -92,7 +121,21 @@ async function main(): Promise<void> {
       process.exit(1);
     });
 
+    // Login to Discord
     await client.login(config.discord.token);
+
+    // Start webhook server after Discord client is ready
+    client.once('ready', () => {
+      webhookServer.start();
+    });
+
+    // Cleanup on exit
+    process.on('SIGINT', () => {
+      logger.info('Shutting down...');
+      webhookServer.stop();
+      void client.destroy();
+      process.exit(0);
+    });
   } catch (error) {
     const logger = getLogger();
     logger.error('Failed to start bot', {

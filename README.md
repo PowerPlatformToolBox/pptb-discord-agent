@@ -7,6 +7,8 @@
 TypeScript Discord bot featuring:
 - **Message reaction logging** to dedicated Discord channel
 - **GitHub issue creation** via slash commands
+- **Automated discussion threads** for GitHub project items
+- **Release announcements** for new versions
 - **Full type safety** with TypeScript strict mode
 - **Production-grade architecture** aligned with PowerPlatformToolBox standards
 
@@ -15,6 +17,7 @@ TypeScript Discord bot featuring:
 ### Discord Integration
 - ⭐ Message logging via emoji reactions
 - 💬 Slash commands with full type safety
+- 🧵 Auto-create threads for labeled GitHub items
 - 🎨 Rich embeds for user feedback
 - ⚠️ Comprehensive error handling
 
@@ -22,7 +25,15 @@ TypeScript Discord bot featuring:
 - 📝 Create issues in PowerPlatformToolBox repos
 - 🔍 Query organization repositories
 - 💭 Add comments to issues
+- 🧵 Auto-create discussion threads for labeled items
+- 🚀 Announce new releases automatically
 - ✅ Input validation and sanitization
+
+### GitHub Webhooks
+- 🔔 **Project Discussion Threads**: When an issue/PR is labeled with `DiscordDiscussion`, a thread is automatically created
+- 🎉 **Release Announcements**: Full releases from `desktop-app` are announced with @everyone
+- 🔒 HMAC signature verification for security
+- ⚙️ Configurable port, channels, and labels
 
 ### Architecture
 - 🏗️ Modular service design
@@ -57,8 +68,8 @@ cp .env.example .env
 
 # Build and deploy
 pnpm build
-pnpm deploy  # Register slash commands
-pnpm dev     # Start development server
+pnpm deploy-commands  # Register slash commands
+pnpm dev              # Start development server
 ```
 
 ### Environment Variables
@@ -77,6 +88,13 @@ GITHUB_ORG=PowerPlatformToolBox
 LOG_CHANNEL_ID=your_logging_channel_id
 REACTION_EMOJI=⭐
 
+# Webhook Configuration
+WEBHOOK_PORT=3000
+WEBHOOK_SECRET=your_webhook_secret
+PROJECT_THREAD_CHANNEL_ID=your_thread_channel_id
+RELEASE_CHANNEL_ID=your_release_channel_id
+PROJECT_DISCUSSION_LABEL=DiscordDiscussion
+
 # Environment
 NODE_ENV=development
 LOG_LEVEL=debug
@@ -88,7 +106,9 @@ LOG_LEVEL=debug
 src/
 ├── types/              # TypeScript type definitions
 ├── config/             # Configuration management
-├── services/           # Business logic (GitHub, Discord)
+├── services/           # Business logic (GitHub, Discord, Webhooks)
+│   ├── github/        # GitHub API services
+│   └── webhook/       # Webhook server and handlers
 ├── handlers/           # Event and command handlers
 │   ├── events/        # Discord event handlers
 │   └── commands/      # Slash command implementations
@@ -100,13 +120,13 @@ src/
 ## Available Commands
 
 ```bash
-pnpm dev          # Start development with auto-reload
-pnpm build        # Compile TypeScript
-pnpm start        # Run production build
-pnpm deploy       # Deploy slash commands to Discord
-pnpm lint         # Check code quality
-pnpm format       # Format code with Prettier
-pnpm type-check   # Validate TypeScript types
+pnpm dev              # Start development with auto-reload
+pnpm build            # Compile TypeScript
+pnpm start            # Run production build
+pnpm deploy-commands  # Deploy slash commands to Discord
+pnpm lint             # Check code quality
+pnpm format           # Format code with Prettier
+pnpm type-check       # Validate TypeScript types
 ```
 
 ## Bot Commands
@@ -122,6 +142,26 @@ Create a GitHub issue in PowerPlatformToolBox repositories
 - `title` (required) - Issue title
 - `description` (required) - Issue description
 - `labels` (optional) - Comma-separated labels
+
+## Webhook Features
+
+### Automatic Discussion Threads
+
+When you label an issue or PR with `DiscordDiscussion`, the bot automatically:
+1. Creates a thread in your designated channel
+2. Posts an embed with item details
+3. Includes author, labels, and direct link
+4. Prevents duplicate threads
+
+### Release Announcements
+
+When a full release is published on `desktop-app`:
+1. Bot posts announcement with @everyone
+2. Includes version, release notes, and link
+3. Only for non-draft, non-prerelease versions
+4. Customizable per repository
+
+**Setup Guide:** See [docs/WEBHOOK_SETUP.md](docs/WEBHOOK_SETUP.md)
 
 ## Development
 
@@ -143,6 +183,12 @@ Create a GitHub issue in PowerPlatformToolBox repositories
 2. Implement singleton pattern with getter function
 3. Use service in commands/events via getter
 
+### Adding Webhook Handlers
+
+1. Create handler in `src/services/webhook/handlers/<name>.ts`
+2. Register in `src/main.ts` webhook handlers map
+3. Handler receives payload and Discord client
+
 ## Technology Stack
 
 - **Discord.js v14+** - Discord bot framework
@@ -152,6 +198,23 @@ Create a GitHub issue in PowerPlatformToolBox repositories
 - **Zod** - Runtime schema validation
 - **ESLint + Prettier** - Code quality
 - **pnpm** - Fast package manager
+
+## Discord Permissions
+
+**Required OAuth2 Scopes:**
+- `bot`
+- `applications.commands`
+
+**Required Bot Permissions:**
+- View Channels
+- Send Messages
+- Send Messages in Threads
+- Create Public Threads
+- Manage Threads
+- Embed Links
+- Read Message History
+- Add Reactions
+- Use External Emojis
 
 ## Standards Alignment
 
@@ -167,6 +230,7 @@ This project follows:
 - [Project Structure](docs/PROJECT_STRUCTURE.md)
 - [Development Guide](docs/TYPESCRIPT_BOT_META_PROMPT.md)
 - [Package Contents](docs/PACKAGE_CONTENTS.md)
+- **[Webhook Setup Guide](docs/WEBHOOK_SETUP.md)** ⭐
 
 ## License
 

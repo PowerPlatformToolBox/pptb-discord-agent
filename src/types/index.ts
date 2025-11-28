@@ -7,3 +7,4 @@ export * from './config';
 export * from './discord';
 export * from './errors';
 export * from './github';
+export * from './webhook';
