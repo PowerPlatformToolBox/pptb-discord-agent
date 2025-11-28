@@ -2,7 +2,7 @@
  * GitHub release webhook handler
  */
 
-import { type Client, EmbedBuilder } from 'discord.js';
+import { type Client, EmbedBuilder, ChannelType } from 'discord.js';
 import { getLogger } from '../../../utils/logger';
 import { loadWebhookConfig } from '../../../config/webhook';
 import { CONSTANTS } from '../../../config/constants';
@@ -39,6 +39,19 @@ export async function handleRelease(
 
     if (!channel || !channel.isTextBased()) {
       logger.error('Invalid release channel', { channelId: config.releaseAnnouncementChannel });
+      return;
+    }
+
+    // Ensure channel supports sending messages (not PartialGroupDMChannel)
+    if (
+      channel.type !== ChannelType.GuildText &&
+      channel.type !== ChannelType.GuildAnnouncement &&
+      channel.type !== ChannelType.DM
+    ) {
+      logger.error('Channel type does not support send', { 
+        channelId: config.releaseAnnouncementChannel,
+        channelType: channel.type 
+      });
       return;
     }
 
