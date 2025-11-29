@@ -4,6 +4,8 @@
 
 Railway provides $5 free credits monthly - perfect for low-usage Discord bots!
 
+**Railway uses Railpack** (their modern build system) which automatically detects pnpm from `package.json`.
+
 ## Prerequisites
 
 - GitHub account with `pptb-discord-assistant` repository
@@ -28,9 +30,11 @@ Railway provides $5 free credits monthly - perfect for low-usage Discord bots!
 4. Click **"Deploy Now"**
 
 Railway will automatically:
-- Detect `nixpacks.toml` configuration
-- Install Node.js 18 and pnpm
-- Build the project
+- Detect `packageManager` field in package.json
+- Install pnpm 9.14.4
+- Run `pnpm install`
+- Run `pnpm build` (from scripts)
+- Start with `pnpm start`
 
 ---
 
@@ -73,23 +77,48 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ---
 
-## Step 4: Deploy
+## Step 4: Railway Auto-Detects pnpm
 
-1. Railway should automatically start building
+Railway reads `package.json` and sees:
+
+```json
+{
+  "packageManager": "pnpm@9.14.4",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
+```
+
+This tells Railway:
+- Use Node.js 18+
+- Use pnpm 9.14.4 specifically
+- Install dependencies with pnpm
+
+**No additional configuration needed!**
+
+---
+
+## Step 5: Deploy
+
+1. Railway automatically starts building
 2. Wait ~2-3 minutes for first build
 3. Check **"Deployments"** tab for progress
 
 **Build logs should show:**
 ```
-✓ Installing pnpm
-✓ pnpm install --frozen-lockfile
-✓ pnpm build
+✓ Detected pnpm from packageManager field
+✓ Installing pnpm@9.14.4
+✓ Running pnpm install
+✓ Running pnpm build
 ✓ Build complete
+✓ Starting: pnpm start
 ```
 
 ---
 
-## Step 5: Get Your Public URL
+## Step 6: Get Your Public URL
 
 1. Go to **"Settings"** → **"Networking"**
 2. Click **"Generate Domain"**
@@ -98,7 +127,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ---
 
-## Step 6: Configure GitHub Webhook
+## Step 7: Configure GitHub Webhook
 
 1. Go to: `github.com/PowerPlatformToolBox/desktop-app/settings/hooks`
 2. Click **"Add webhook"**
@@ -114,7 +143,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ---
 
-## Step 7: Test Everything
+## Step 8: Test Everything
 
 ### Test Discord Bot
 
@@ -156,7 +185,7 @@ Bot is ready and online
 **Already active!** Every push to `main` will:
 
 1. Trigger automatic build on Railway
-2. Run `pnpm install --frozen-lockfile`
+2. Run `pnpm install`
 3. Run `pnpm build`
 4. Deploy new version
 5. Zero downtime deployment
@@ -169,6 +198,27 @@ git push origin main
 ```
 
 Railway automatically deploys in ~2-3 minutes.
+
+---
+
+## How Railway Detects pnpm
+
+Railway's Railpack system checks in order:
+
+1. **`packageManager` field** in package.json (recommended)
+   ```json
+   "packageManager": "pnpm@9.14.4"
+   ```
+
+2. **`pnpm-lock.yaml`** file presence
+   - If found, uses pnpm automatically
+
+3. **`engines.pnpm`** field
+   ```json
+   "engines": { "pnpm": ">=8.0.0" }
+   ```
+
+Your project uses **all three** for maximum compatibility!
 
 ---
 
@@ -223,6 +273,33 @@ Or force redeploy:
 
 ## Troubleshooting
 
+### "pnpm not found" Error
+
+**Solution 1: Check package.json**
+Ensure these fields exist:
+```json
+{
+  "packageManager": "pnpm@9.14.4",
+  "engines": {
+    "pnpm": ">=8.0.0"
+  }
+}
+```
+
+**Solution 2: Check pnpm-lock.yaml**
+Ensure `pnpm-lock.yaml` is committed to repository:
+```bash
+git add pnpm-lock.yaml
+git commit -m "Add pnpm lockfile"
+git push
+```
+
+**Solution 3: Manual Settings Override**
+In Railway Settings → Build:
+- Install Command: `pnpm install`
+- Build Command: `pnpm build`
+- Start Command: `pnpm start`
+
 ### Build Failing
 
 **Check deployment logs:**
@@ -232,12 +309,12 @@ Or force redeploy:
 **Common issues:**
 - Missing environment variables
 - TypeScript compilation errors
-- pnpm install failures
+- Missing pnpm-lock.yaml
 
 **Solutions:**
 - Verify all environment variables are set
-- Check if `nixpacks.toml` is present
-- Ensure `pnpm-lock.yaml` is committed
+- Run `pnpm build` locally to test
+- Ensure lockfile is committed
 
 ### Bot Not Responding in Discord
 
@@ -266,18 +343,19 @@ Should see: "Webhook received"
 **Verify:**
 - `WEBHOOK_SECRET` matches GitHub webhook secret
 - Railway URL is correct in GitHub webhook
-- Port 3000 is configured
+- Port 3000 is exposed
 
-### "pnpm not found" Error
+---
 
-**Solution:**
-Ensure `nixpacks.toml` is in repository root with:
-```toml
-[phases.setup]
-nixPkgs = ['nodejs_18', 'pnpm']
+## Husky Prepare Script Fix
+
+Note the `prepare` script in package.json:
+
+```json
+"prepare": "husky || true"
 ```
 
-Railway will automatically detect and use it.
+The `|| true` prevents build failures in Railway (where `.git` folder doesn't exist). This is a Railway-specific fix.
 
 ---
 
@@ -312,20 +390,16 @@ git push origin main
 
 ---
 
-## Configuration Files
+## Why This Works
 
-### nixpacks.toml
+Railway's **Railpack** (modern build system):
+- ✅ Automatically detects `packageManager` field
+- ✅ Respects `engines` specifications
+- ✅ No deprecated nixpacks needed
+- ✅ No custom configuration files needed
+- ✅ Standard Node.js project structure
 
-Tells Railway:
-- Use Node.js 18
-- Install pnpm
-- Run pnpm commands for install/build/start
-
-### .npmrc
-
-Enforces:
-- pnpm package manager
-- Engine version requirements
+**Everything is in package.json - Railway does the rest!**
 
 ---
 
@@ -344,54 +418,18 @@ Enforces:
 
 ---
 
-## Next Steps
-
-1. ✅ Deploy bot to Railway
-2. ✅ Configure environment variables
-3. ✅ Get public URL
-4. ✅ Configure GitHub webhooks
-5. ✅ Test all features
-6. 🎯 Monitor usage and logs
-7. 🎯 Set up alerts (optional)
-
-**Your bot is now production-ready with auto-deploy!** 🚀
-
----
-
-## Comparison: Railway vs Other Platforms
-
-**Why Railway?**
-- ✅ Actually free for low-usage bots ($5 credits monthly)
-- ✅ Auto-deploy on push (zero config)
-- ✅ pnpm support via nixpacks
-- ✅ HTTPS included
-- ✅ Great logs and monitoring
-- ✅ Easy environment variables
-- ✅ Fast deployments (~2-3 min)
-
-**vs DigitalOcean:**
-- Railway: $0-5/month, Railway wins
-- DigitalOcean: $5/month minimum
-
-**vs Heroku:**
-- Railway: $5 free credits
-- Heroku: No free tier anymore
-
-**vs AWS:**
-- Railway: Simple setup
-- AWS: Complex but more control
-
----
-
 ## Summary
 
 Railway is perfect for this Discord bot:
-- 100% free for your usage
-- Auto-deploy from GitHub
-- pnpm support built-in
-- Secure and reliable
-- Easy to manage
+- ✅ 100% free for your usage
+- ✅ Auto-detects pnpm from package.json
+- ✅ No deprecated nixpacks needed
+- ✅ Auto-deploy from GitHub
+- ✅ Secure and reliable
+- ✅ Easy to manage
 
-**Total monthly cost: $0** (within free tier)
-**Setup time: 10 minutes**
+**Total monthly cost: $0** (within free tier)  
+**Setup time: 10 minutes**  
 **Maintenance: Zero** (auto-deploys)
+
+**Modern Railpack approach - no legacy configs needed!**
