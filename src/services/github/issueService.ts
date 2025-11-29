@@ -30,26 +30,30 @@ export class GitHubIssueService {
       const body = sanitizeIssueInput(params.body);
       const labels = params.labels ? validateLabels(params.labels) : [];
 
-      const response = await this.client.getOctokit().rest.issues.create({
-        owner: this.client.getOrg(),
-        repo: params.repo,
-        title,
-        body,
-        labels,
-      });
+      const issue = await this.client.request<GitHubIssue>(
+        `/repos/${this.client.getOrg()}/${params.repo}/issues`,
+        {
+          method: 'POST',
+          body: {
+            title,
+            body,
+            labels,
+          },
+        }
+      );
 
       this.logger.info('GitHub issue created', {
         repo: params.repo,
-        issueNumber: response.data.number,
-        url: response.data.html_url,
+        issueNumber: issue.number,
+        url: issue.html_url,
       });
 
       return {
         success: true,
         data: {
-          issue: response.data as GitHubIssue,
-          url: response.data.html_url,
-          number: response.data.number,
+          issue,
+          url: issue.html_url,
+          number: issue.number,
         },
       };
     } catch (error) {
@@ -66,14 +70,15 @@ export class GitHubIssueService {
 
   public async listRepositories(): Promise<GitHubServiceResult<GitHubRepository[]>> {
     try {
-      const response = await this.client.getOctokit().rest.repos.listForOrg({
-        org: this.client.getOrg(),
-        type: 'all',
-        sort: 'updated',
-        per_page: 10,
-      });
+      const repos = await this.client.request<Array<{
+        name: string;
+        description: string | null;
+        html_url: string;
+        stargazers_count: number;
+        language: string | null;
+      }>>(`/orgs/${this.client.getOrg()}/repos?type=all&sort=updated&per_page=10`);
 
-      const repos: GitHubRepository[] = response.data.map((repo) => ({
+      const repositories: GitHubRepository[] = repos.map((repo) => ({
         name: repo.name,
         description: repo.description ?? undefined,
         html_url: repo.html_url,
@@ -83,7 +88,7 @@ export class GitHubIssueService {
 
       return {
         success: true,
-        data: repos,
+        data: repositories,
       };
     } catch (error) {
       this.logger.error('Failed to list repositories', {
@@ -101,15 +106,13 @@ export class GitHubIssueService {
     issueNumber: number
   ): Promise<GitHubServiceResult<GitHubIssue>> {
     try {
-      const response = await this.client.getOctokit().rest.issues.get({
-        owner: this.client.getOrg(),
-        repo,
-        issue_number: issueNumber,
-      });
+      const issue = await this.client.request<GitHubIssue>(
+        `/repos/${this.client.getOrg()}/${repo}/issues/${issueNumber}`
+      );
 
       return {
         success: true,
-        data: response.data as GitHubIssue,
+        data: issue,
       };
     } catch (error) {
       this.logger.error('Failed to get issue', {
@@ -132,12 +135,15 @@ export class GitHubIssueService {
     try {
       const sanitizedComment = sanitizeIssueInput(comment);
 
-      const response = await this.client.getOctokit().rest.issues.createComment({
-        owner: this.client.getOrg(),
-        repo,
-        issue_number: issueNumber,
-        body: sanitizedComment,
-      });
+      const response = await this.client.request(
+        `/repos/${this.client.getOrg()}/${repo}/issues/${issueNumber}/comments`,
+        {
+          method: 'POST',
+          body: {
+            body: sanitizedComment,
+          },
+        }
+      );
 
       this.logger.info('Comment added to issue', {
         repo,
@@ -146,7 +152,7 @@ export class GitHubIssueService {
 
       return {
         success: true,
-        data: response.data,
+        data: response,
       };
     } catch (error) {
       this.logger.error('Failed to add comment', {
