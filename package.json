@@ -12,14 +12,16 @@
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
     "type-check": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "keywords": ["discord", "bot", "github", "powerplatform", "typescript"],
   "author": "PowerPlatformToolBox",
   "license": "GPL-3.0",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
   },
+  "packageManager": "pnpm@9.14.4",
   "dependencies": {
     "@octokit/rest": "^21.0.2",
     "discord.js": "^14.16.3",
