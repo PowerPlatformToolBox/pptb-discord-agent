@@ -23,7 +23,6 @@
   },
   "packageManager": "pnpm@9.14.4",
   "dependencies": {
-    "@octokit/rest": "^21.0.2",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "winston": "^3.17.0",

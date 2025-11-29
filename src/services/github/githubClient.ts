@@ -1,22 +1,25 @@
 /**
- * GitHub API client wrapper using Octokit
+ * GitHub API client using native fetch
  */
 
-import { Octokit } from '@octokit/rest';
 import { getConfig } from '../../config/config';
 import { getLogger } from '../../utils/logger';
 import { GitHubAPIError } from '../../types/errors';
 
+interface GitHubAPIOptions {
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  body?: unknown;
+}
+
 export class GitHubClient {
-  private octokit: Octokit;
+  private readonly token: string;
   private readonly org: string;
+  private readonly baseURL = 'https://api.github.com';
   private readonly logger = getLogger();
 
   constructor() {
     const config = getConfig();
-    this.octokit = new Octokit({
-      auth: config.github.token,
-    });
+    this.token = config.github.token;
     this.org = config.github.org;
     this.logger.info('GitHub client initialized', { org: this.org });
   }
@@ -25,13 +28,77 @@ export class GitHubClient {
     return this.org;
   }
 
-  public getOctokit(): Octokit {
-    return this.octokit;
+  /**
+   * Make authenticated request to GitHub API
+   */
+  public async request<T>(
+    endpoint: string,
+    options: GitHubAPIOptions = {}
+  ): Promise<T> {
+    const { method = 'GET', body } = options;
+
+    const url = `${this.baseURL}${endpoint}`;
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${this.token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'pptb-discord-assistant',
+    };
+
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          message: response.statusText,
+        }));
+
+        this.logger.error('GitHub API request failed', {
+          endpoint,
+          status: response.status,
+          error: errorData,
+        });
+
+        throw new GitHubAPIError(
+          `GitHub API error: ${response.status} ${errorData.message || response.statusText}`,
+          {
+            endpoint,
+            status: response.status,
+            error: errorData,
+          }
+        );
+      }
+
+      const data = await response.json();
+      return data as T;
+    } catch (error) {
+      if (error instanceof GitHubAPIError) {
+        throw error;
+      }
+
+      this.logger.error('GitHub API request error', {
+        endpoint,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+
+      throw new GitHubAPIError('Failed to make GitHub API request', {
+        endpoint,
+        error,
+      });
+    }
   }
 
   public async testConnection(): Promise<boolean> {
     try {
-      await this.octokit.rest.users.getAuthenticated();
+      await this.request('/user');
       this.logger.info('GitHub API connection test successful');
       return true;
     } catch (error) {
