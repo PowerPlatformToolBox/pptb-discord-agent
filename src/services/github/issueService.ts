@@ -29,9 +29,10 @@ export class GitHubIssueService {
       const title = sanitizeIssueInput(params.title);
       const body = sanitizeIssueInput(params.body);
       const labels = params.labels ? validateLabels(params.labels) : [];
+      const owner = params.owner || this.client.getOrg(); // Use override or default org
 
       const issue = await this.client.request<GitHubIssue>(
-        `/repos/${this.client.getOrg()}/${params.repo}/issues`,
+        `/repos/${owner}/${params.repo}/issues`,
         {
           method: 'POST',
           body: {
@@ -43,6 +44,7 @@ export class GitHubIssueService {
       );
 
       this.logger.info('GitHub issue created', {
+        owner,
         repo: params.repo,
         issueNumber: issue.number,
         url: issue.html_url,
@@ -60,6 +62,7 @@ export class GitHubIssueService {
       this.logger.error('Failed to create GitHub issue', {
         error: error instanceof Error ? error.message : 'Unknown error',
         repo: params.repo,
+        owner: params.owner,
       });
       return {
         success: false,

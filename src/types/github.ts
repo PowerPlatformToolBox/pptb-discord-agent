@@ -25,6 +25,7 @@ export interface CreateIssueParams {
   title: string;
   body: string;
   labels?: string[];
+  owner?: string; // Optional owner override (defaults to configured org)
 }
 
 export interface GitHubServiceResult<T> {
