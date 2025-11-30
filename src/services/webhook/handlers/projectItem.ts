@@ -20,13 +20,26 @@ export async function handleProjectItem(
     return;
   }
 
-  // Check if issue/PR has the discussion label
+  // Check if issue/PR has any watched labels
   const labels = payload.issue?.labels || [];
-  const hasDiscussionLabel = labels.some(
-    (label) => label.name === config.projectDiscussionLabel
+  const hasWatchedLabel = labels.some((label) =>
+    config.watchedLabels.includes(label.name)
   );
 
-  if (!hasDiscussionLabel) {
+  if (!hasWatchedLabel) {
+    logger.debug('No watched labels found', {
+      itemLabels: labels.map((l) => l.name),
+      watched: config.watchedLabels,
+    });
+    return;
+  }
+
+  // Identify which label triggered this
+  const triggeringLabel = labels.find((label) =>
+    config.watchedLabels.includes(label.name)
+  );
+
+  if (!triggeringLabel) {
     return;
   }
 
@@ -67,8 +80,9 @@ export async function handleProjectItem(
       .addFields(
         { name: 'Repository', value: payload.repository.full_name, inline: true },
         { name: 'Author', value: item.user.login, inline: true },
+        { name: 'Triggering Label', value: triggeringLabel.name, inline: true },
         {
-          name: 'Labels',
+          name: 'All Labels',
           value: labels.map((l) => l.name).join(', ') || 'None',
           inline: false,
         }
@@ -80,7 +94,7 @@ export async function handleProjectItem(
     const thread = await channel.threads.create({
       name: threadName,
       autoArchiveDuration: 10080, // 7 days
-      reason: `Discussion for ${itemType} #${item.number}`,
+      reason: `Discussion for ${itemType} #${item.number} (triggered by label: ${triggeringLabel.name})`,
     });
 
     await thread.send({
@@ -92,6 +106,7 @@ export async function handleProjectItem(
       threadId: thread.id,
       itemNumber: item.number,
       itemType,
+      triggeringLabel: triggeringLabel.name,
     });
   } catch (error) {
     logger.error('Failed to create thread', {

@@ -3,29 +3,46 @@
  */
 
 import { z } from 'zod';
-import type { WebhookConfig } from '../types/webhook';
+import { getLogger } from '../utils/logger';
 
-const webhookEnvSchema = z.object({
-  WEBHOOK_PORT: z.string().default('3000').transform(Number),
-  WEBHOOK_SECRET: z.string().optional(),
-  PROJECT_THREAD_CHANNEL_ID: z.string().min(1),
-  RELEASE_CHANNEL_ID: z.string().min(1),
-  PROJECT_DISCUSSION_LABEL: z.string().default('DiscordDiscussion'),
+const webhookConfigSchema = z.object({
+  port: z.coerce.number().default(3000),
+  secret: z.string().optional(),
+  projectThreadChannel: z.string(),
+  releaseAnnouncementChannel: z.string(),
+  watchedRepositories: z.string().transform((val) => val.split(',')).default('pptb-mockaroo-munger'),
+  watchedLabels: z.string().transform((val) => val.split(',')).default('DiscordDiscussion'),
 });
 
-export function loadWebhookConfig(): WebhookConfig {
-  const result = webhookEnvSchema.safeParse(process.env);
+export type WebhookConfig = z.infer<typeof webhookConfigSchema>;
 
-  if (!result.success) {
-    const errors = result.error.errors.map((err) => `${err.path.join('.')}: ${err.message}`);
-    throw new Error(`Webhook config validation failed:\n${errors.join('\n')}`);
+let cachedConfig: WebhookConfig | null = null;
+
+export function loadWebhookConfig(): WebhookConfig {
+  if (cachedConfig) {
+    return cachedConfig;
   }
 
-  return {
-    port: result.data.WEBHOOK_PORT,
-    secret: result.data.WEBHOOK_SECRET,
-    projectThreadChannel: result.data.PROJECT_THREAD_CHANNEL_ID,
-    releaseAnnouncementChannel: result.data.RELEASE_CHANNEL_ID,
-    projectDiscussionLabel: result.data.PROJECT_DISCUSSION_LABEL,
-  };
+  const logger = getLogger();
+
+  const config = webhookConfigSchema.parse({
+    port: process.env.WEBHOOK_PORT,
+    secret: process.env.WEBHOOK_SECRET,
+    projectThreadChannel: process.env.PROJECT_THREAD_CHANNEL_ID,
+    releaseAnnouncementChannel: process.env.RELEASE_CHANNEL_ID,
+    watchedRepositories: process.env.WATCHED_REPOSITORIES,
+    watchedLabels: process.env.WATCHED_LABELS,
+  });
+
+  cachedConfig = config;
+
+  logger.info('Webhook config loaded', {
+    port: config.port,
+    projectThreadChannel: config.projectThreadChannel,
+    releaseAnnouncementChannel: config.releaseAnnouncementChannel,
+    watchedRepositories: config.watchedRepositories,
+    watchedLabels: config.watchedLabels,
+  });
+
+  return config;
 }
