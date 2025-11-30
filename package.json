@@ -7,7 +7,7 @@
     "build": "tsc",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
-    "deploy-commands": "tsx src/scripts/deployCommands.ts",
+    "deploy-commands": "node dist/scripts/deployCommands.js",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
