@@ -28,9 +28,12 @@ export async function handleRelease(
     return;
   }
 
-  // Only notify for desktop-app releases
-  if (payload.repository.name !== 'desktop-app') {
-    logger.debug('Skipping non-desktop-app release', { repo: payload.repository.name });
+  // Check if repository is in watched list
+  if (!config.watchedRepositories.includes(payload.repository.name)) {
+    logger.debug('Skipping unwatched repository', { 
+      repo: payload.repository.name,
+      watched: config.watchedRepositories,
+    });
     return;
   }
 
