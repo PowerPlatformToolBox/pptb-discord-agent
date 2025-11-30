@@ -5,7 +5,6 @@
 import { type Client, EmbedBuilder, ChannelType } from 'discord.js';
 import { getLogger } from '../../../utils/logger';
 import { loadWebhookConfig } from '../../../config/webhook';
-import { CONSTANTS } from '../../../config/constants';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 
 export async function handleRelease(
@@ -86,7 +85,7 @@ export async function handleRelease(
     if (release.assets && release.assets.length > 0) {
       const assetLinks = release.assets
         .slice(0, 5) // Limit to 5 assets
-        .map(asset => `[${asset.name}](${asset.browser_download_url})`)
+        .map((asset) => `[${asset.name}](${asset.browser_download_url})`)
         .join(' • ');
       
       embed.addFields({
@@ -96,15 +95,12 @@ export async function handleRelease(
       });
     }
 
-    // Add compare changes link if not first release
-    if (payload.repository.html_url) {
-      const compareUrl = `${payload.repository.html_url}/releases/tag/${release.tag_name}`;
-      embed.addFields({
-        name: '🔗 Links',
-        value: `[View Release](${release.html_url}) • [Source Code](${release.zipball_url})`,
-        inline: false
-      });
-    }
+    // Add links section
+    embed.addFields({
+      name: '🔗 Links',
+      value: `[View Release](${release.html_url}) • [Source Code](${release.zipball_url})`,
+      inline: false
+    });
 
     await channel.send({
       content: '🎉 **New release available!**',
