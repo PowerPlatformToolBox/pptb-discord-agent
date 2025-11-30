@@ -58,27 +58,56 @@ export async function handleRelease(
       return;
     }
 
+    // Format release body (trim to Discord's 4096 char limit)
+    let description = release.body || 'No release notes provided';
+    if (description.length > 4000) {
+      description = description.substring(0, 3997) + '...';
+    }
+
     // Create embed for release announcement
     const embed = new EmbedBuilder()
       .setTitle(`🚀 ${release.name || release.tag_name}`)
       .setURL(release.html_url)
-      .setDescription(
-        release.body
-          ? release.body.substring(0, 2000) + (release.body.length > 2000 ? '...' : '')
-          : 'No release notes provided'
-      )
-      .setColor(CONSTANTS.DISCORD_COLORS.SUCCESS)
+      .setDescription(description)
+      .setColor(0x5865F2) // Discord blurple
       .addFields(
-        { name: 'Version', value: release.tag_name, inline: true },
-        { name: 'Repository', value: payload.repository.full_name, inline: true },
-        { name: 'Published By', value: release.author.login, inline: true }
+        { name: '📦 Version', value: `\`${release.tag_name}\``, inline: true },
+        { name: '📂 Repository', value: payload.repository.full_name, inline: true },
+        { name: '👤 Published By', value: `[@${release.author.login}](${release.author.html_url})`, inline: true }
       )
       .setThumbnail(release.author.avatar_url)
       .setTimestamp(new Date(release.published_at))
-      .setFooter({ text: 'PowerPlatformToolBox Release' });
+      .setFooter({ 
+        text: `${payload.repository.name} • ${release.prerelease ? 'Pre-release' : 'Stable Release'}`,
+        iconURL: payload.repository.owner?.avatar_url 
+      });
+
+    // Add assets if available
+    if (release.assets && release.assets.length > 0) {
+      const assetLinks = release.assets
+        .slice(0, 5) // Limit to 5 assets
+        .map(asset => `[${asset.name}](${asset.browser_download_url})`)
+        .join(' • ');
+      
+      embed.addFields({
+        name: '📥 Downloads',
+        value: assetLinks,
+        inline: false
+      });
+    }
+
+    // Add compare changes link if not first release
+    if (payload.repository.html_url) {
+      const compareUrl = `${payload.repository.html_url}/releases/tag/${release.tag_name}`;
+      embed.addFields({
+        name: '🔗 Links',
+        value: `[View Release](${release.html_url}) • [Source Code](${release.zipball_url})`,
+        inline: false
+      });
+    }
 
     await channel.send({
-      content: '🎉 @everyone New release available!',
+      content: '🎉 **New release available!**',
       embeds: [embed],
     });
 
