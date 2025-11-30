@@ -11,6 +11,11 @@ interface GitHubAPIOptions {
   body?: unknown;
 }
 
+interface GitHubErrorResponse {
+  message?: string;
+  documentation_url?: string;
+}
+
 export class GitHubClient {
   private readonly token: string;
   private readonly org: string;
@@ -38,7 +43,7 @@ export class GitHubClient {
     const { method = 'GET', body } = options;
 
     const url = `${this.baseURL}${endpoint}`;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Authorization': `Bearer ${this.token}`,
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
@@ -57,9 +62,15 @@ export class GitHubClient {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
+        let errorData: GitHubErrorResponse = {
           message: response.statusText,
-        }));
+        };
+
+        try {
+          errorData = await response.json();
+        } catch {
+          // Use default error message if JSON parsing fails
+        }
 
         this.logger.error('GitHub API request failed', {
           endpoint,
