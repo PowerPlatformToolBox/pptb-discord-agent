@@ -27,7 +27,7 @@ Create a GitHub issue in PowerPlatformToolBox repositories.
 | 🖥️ Desktop App (Main Project) | PowerPlatformToolBox | Main desktop application |
 | 🌐 Website | PowerPlatformToolBox | powerplatformtoolbox.com website |
 | 📚 Documentation | PowerPlatformToolBox | Documentation site |
-| 🤖 Discord Bot (Testing) | MattBerg11 | Bot testing repository (private) |
+| 🧪 Mockaroo Munger (Testing) | MattBerg11 | Mockaroo data munger tool (private, testing) |
 
 **Examples:**
 
@@ -49,10 +49,10 @@ Create a GitHub issue in PowerPlatformToolBox repositories.
   labels: enhancement,ux
 ```
 
-**Testing in bot repo:**
+**Testing in Mockaroo Munger:**
 ```
 /create-issue 
-  repository: Discord Bot (Testing)
+  repository: Mockaroo Munger (Testing)
   title: Test webhook integration
   description: Testing GitHub webhook functionality
 ```
@@ -73,7 +73,7 @@ Issue body automatically includes:
 **Permissions Required:**
 - GitHub token must have `repo` scope
 - Write access to target repository
-- For testing repo: Token needs access to MattBerg11/pptb-discord-assistant
+- For testing repo: Token needs access to MattBerg11/pptb-mockaroo-munger
 
 **Error Handling:**
 
@@ -136,4 +136,4 @@ This updates all slash commands in Discord.
 - [pptb-docs-web](https://github.com/PowerPlatformToolBox/pptb-docs-web) - Documentation
 
 **Testing:**
-- [pptb-discord-assistant](https://github.com/MattBerg11/pptb-discord-assistant) - Bot repo (private)
+- [pptb-mockaroo-munger](https://github.com/MattBerg11/pptb-mockaroo-munger) - Mockaroo data munger tool (private)
