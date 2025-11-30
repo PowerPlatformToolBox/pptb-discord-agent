@@ -15,6 +15,8 @@ async function deployCommands(): Promise<void> {
     const logger = getLogger();
     const commands: unknown[] = [];
 
+    // When run via tsx, use dist folder (production build)
+    // __dirname will be /app/dist/scripts after compilation
     const commandsPath = join(__dirname, '..', 'handlers', 'commands');
     
     logger.info('Loading commands from', { path: commandsPath });
