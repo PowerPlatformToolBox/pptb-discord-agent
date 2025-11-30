@@ -12,7 +12,16 @@ export const createIssueCommand: BotCommand = {
     .setName('create-issue')
     .setDescription('Create a GitHub issue in a PowerPlatformToolBox repository')
     .addStringOption((option) =>
-      option.setName('repository').setDescription('The repository name').setRequired(true)
+      option
+        .setName('repository')
+        .setDescription('Select the repository')
+        .setRequired(true)
+        .addChoices(
+          { name: '🖥️ Desktop App (Main Project)', value: 'desktop-app' },
+          { name: '🌐 Website', value: 'pptb-web' },
+          { name: '📚 Documentation', value: 'pptb-docs-web' },
+          { name: '🤖 Discord Bot (Testing)', value: 'pptb-discord-assistant' }
+        )
     )
     .addStringOption((option) =>
       option.setName('title').setDescription('Issue title').setRequired(true)
@@ -37,21 +46,34 @@ export const createIssueCommand: BotCommand = {
     const labels = labelsInput ? labelsInput.split(',').map((label) => label.trim()) : [];
     const body = `${description}\n\n---\n*Created by ${interaction.user.tag} via Discord*`;
 
+    // Determine the org/owner based on repository
+    const isTestingRepo = repository === 'pptb-discord-assistant';
+    const owner = isTestingRepo ? 'MattBerg11' : 'PowerPlatformToolBox';
+
     const issueService = getGitHubIssueService();
     const result = await issueService.createIssue({
       repo: repository,
       title,
       body,
       labels,
+      owner,
     });
 
     if (result.success && result.data) {
+      const repoEmoji = {
+        'desktop-app': '🖥️',
+        'pptb-web': '🌐',
+        'pptb-docs-web': '📚',
+        'pptb-discord-assistant': '🤖',
+      }[repository] || '';
+
       const embed = createSuccessEmbed(
         'Issue Created',
-        `Successfully created issue #${result.data.number} in ${repository}`
+        `Successfully created issue #${result.data.number} in ${repoEmoji} ${repository}`
       ).addFields(
         { name: 'Title', value: title, inline: false },
-        { name: 'URL', value: result.data.url, inline: false }
+        { name: 'URL', value: result.data.url, inline: false },
+        { name: 'Repository', value: `${owner}/${repository}`, inline: true }
       );
 
       await interaction.editReply({ embeds: [embed] });
