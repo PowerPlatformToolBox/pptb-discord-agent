@@ -115,13 +115,19 @@ export async function handleRelease(
       );
 
       if (windowsAsset) {
-        downloadButtons.push(
-          new ButtonBuilder()
-            .setLabel('Download for Windows')
-            .setEmoji('<:windows:1322426863893512212>') // Custom Windows emoji - replace with your server's emoji ID
-            .setURL(windowsAsset.browser_download_url)
-            .setStyle(ButtonStyle.Link)
-        );
+        const winButton = new ButtonBuilder()
+          .setLabel('Download for Windows')
+          .setURL(windowsAsset.browser_download_url)
+          .setStyle(ButtonStyle.Link);
+        
+        // Try to add custom emoji if available, fall back to text
+        try {
+          winButton.setEmoji({ name: 'windows', id: '1322426863893512212' });
+        } catch {
+          // If custom emoji fails, just use label without emoji
+        }
+        
+        downloadButtons.push(winButton);
       }
 
       // macOS installer
@@ -132,13 +138,19 @@ export async function handleRelease(
       );
 
       if (macAsset) {
-        downloadButtons.push(
-          new ButtonBuilder()
-            .setLabel('Download for macOS')
-            .setEmoji('<:apple:1322426866250244187>') // Custom Apple emoji - replace with your server's emoji ID
-            .setURL(macAsset.browser_download_url)
-            .setStyle(ButtonStyle.Link)
-        );
+        const macButton = new ButtonBuilder()
+          .setLabel('Download for macOS')
+          .setURL(macAsset.browser_download_url)
+          .setStyle(ButtonStyle.Link);
+        
+        // Try to add custom emoji if available, fall back to text
+        try {
+          macButton.setEmoji({ name: 'apple', id: '1322426866250244187' });
+        } catch {
+          // If custom emoji fails, just use label without emoji
+        }
+        
+        downloadButtons.push(macButton);
       }
 
       if (downloadButtons.length > 0) {
