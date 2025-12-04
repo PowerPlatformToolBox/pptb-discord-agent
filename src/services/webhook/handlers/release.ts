@@ -70,30 +70,14 @@ export async function handleRelease(
       .setDescription(description)
       .setColor(0x5865F2) // Discord blurple
       .addFields(
-        { name: '📦 Version', value: `\`${release.tag_name}\``, inline: true },
-        { name: '📂 Repository', value: payload.repository.full_name, inline: true },
-        { name: '👤 Published By', value: `[@${release.author.login}](${release.author.html_url})`, inline: true }
+        { name: '📦 Version', value: release.tag_name, inline: true },
+        { name: '📂 Repository', value: payload.repository.full_name, inline: true }
       )
-      .setThumbnail(release.author.avatar_url)
       .setTimestamp(new Date(release.published_at))
       .setFooter({ 
         text: `${payload.repository.name} • ${release.prerelease ? 'Pre-release' : 'Stable Release'}`,
         iconURL: payload.repository.owner?.avatar_url 
       });
-
-    // Add assets if available
-    if (release.assets && release.assets.length > 0) {
-      const assetLinks = release.assets
-        .slice(0, 5) // Limit to 5 assets
-        .map((asset) => `[${asset.name}](${asset.browser_download_url})`)
-        .join(' • ');
-      
-      embed.addFields({
-        name: '📥 Downloads',
-        value: assetLinks,
-        inline: false
-      });
-    }
 
     // Add links section
     embed.addFields({
@@ -120,7 +104,6 @@ export async function handleRelease(
           .setURL(windowsAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
         
-        // Try to add custom emoji if available, fall back to text
         try {
           winButton.setEmoji({ name: 'm1', id: '1446014221820231821' });
         } catch {
@@ -143,7 +126,6 @@ export async function handleRelease(
           .setURL(macAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
         
-        // Try to add custom emoji if available, fall back to text
         try {
           macButton.setEmoji({ name: 'a1', id: '1446014603883446353' });
         } catch {
@@ -151,6 +133,27 @@ export async function handleRelease(
         }
         
         downloadButtons.push(macButton);
+      }
+
+      // Linux AppImage
+      const linuxAsset = release.assets.find(asset => 
+        asset.name.toLowerCase().endsWith('.appimage') ||
+        asset.name.toLowerCase().includes('linux')
+      );
+
+      if (linuxAsset) {
+        const linuxButton = new ButtonBuilder()
+          .setLabel('Download for Linux')
+          .setURL(linuxAsset.browser_download_url)
+          .setStyle(ButtonStyle.Link);
+        
+        try {
+          linuxButton.setEmoji({ name: 'linux', id: '1446019504483205160' });
+        } catch {
+          // If custom emoji fails, just use label without emoji
+        }
+        
+        downloadButtons.push(linuxButton);
       }
 
       if (downloadButtons.length > 0) {
