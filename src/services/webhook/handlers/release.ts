@@ -122,7 +122,7 @@ export async function handleRelease(
         
         // Try to add custom emoji if available, fall back to text
         try {
-          winButton.setEmoji({ name: 'windows', id: '1322426863893512212' });
+          winButton.setEmoji({ name: 'm1', id: '1446014221820231821' });
         } catch {
           // If custom emoji fails, just use label without emoji
         }
@@ -145,7 +145,7 @@ export async function handleRelease(
         
         // Try to add custom emoji if available, fall back to text
         try {
-          macButton.setEmoji({ name: 'apple', id: '1322426866250244187' });
+          macButton.setEmoji({ name: 'a1', id: '1446014603883446353' });
         } catch {
           // If custom emoji fails, just use label without emoji
         }
