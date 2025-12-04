@@ -2,7 +2,7 @@
  * GitHub release webhook handler
  */
 
-import { type Client, EmbedBuilder, ChannelType } from 'discord.js';
+import { type Client, EmbedBuilder, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getLogger } from '../../../utils/logger';
 import { loadWebhookConfig } from '../../../config/webhook';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
@@ -102,9 +102,33 @@ export async function handleRelease(
       inline: false
     });
 
+    // Create download button for Windows installer
+    const buttons: ActionRowBuilder<ButtonBuilder>[] = [];
+    
+    if (release.assets && release.assets.length > 0) {
+      const windowsAsset = release.assets.find(asset => 
+        asset.name.toLowerCase().endsWith('.exe') || 
+        asset.name.toLowerCase().includes('win')
+      );
+
+      if (windowsAsset) {
+        const downloadButton = new ButtonBuilder()
+          .setLabel('Download for Windows')
+          .setEmoji('🪟') // Windows emoji
+          .setURL(windowsAsset.browser_download_url)
+          .setStyle(ButtonStyle.Link);
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(downloadButton);
+
+        buttons.push(row);
+      }
+    }
+
     await channel.send({
       content: '🎉 **New release available!**',
       embeds: [embed],
+      components: buttons,
     });
 
     logger.info('Posted release announcement', {
