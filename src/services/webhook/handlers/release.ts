@@ -102,25 +102,48 @@ export async function handleRelease(
       inline: false
     });
 
-    // Create download button for Windows installer
+    // Create download buttons for different platforms
     const buttons: ActionRowBuilder<ButtonBuilder>[] = [];
     
     if (release.assets && release.assets.length > 0) {
+      const downloadButtons: ButtonBuilder[] = [];
+
+      // Windows installer
       const windowsAsset = release.assets.find(asset => 
         asset.name.toLowerCase().endsWith('.exe') || 
         asset.name.toLowerCase().includes('win')
       );
 
       if (windowsAsset) {
-        const downloadButton = new ButtonBuilder()
-          .setLabel('Download for Windows')
-          .setEmoji('🪟') // Windows emoji
-          .setURL(windowsAsset.browser_download_url)
-          .setStyle(ButtonStyle.Link);
+        downloadButtons.push(
+          new ButtonBuilder()
+            .setLabel('Download for Windows')
+            .setEmoji('<:windows:1322426863893512212>') // Custom Windows emoji - replace with your server's emoji ID
+            .setURL(windowsAsset.browser_download_url)
+            .setStyle(ButtonStyle.Link)
+        );
+      }
 
+      // macOS installer
+      const macAsset = release.assets.find(asset => 
+        asset.name.toLowerCase().includes('mac') || 
+        asset.name.toLowerCase().includes('darwin') ||
+        asset.name.toLowerCase().endsWith('.dmg')
+      );
+
+      if (macAsset) {
+        downloadButtons.push(
+          new ButtonBuilder()
+            .setLabel('Download for macOS')
+            .setEmoji('<:apple:1322426866250244187>') // Custom Apple emoji - replace with your server's emoji ID
+            .setURL(macAsset.browser_download_url)
+            .setStyle(ButtonStyle.Link)
+        );
+      }
+
+      if (downloadButtons.length > 0) {
         const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(downloadButton);
-
+          .addComponents(...downloadButtons);
         buttons.push(row);
       }
     }
