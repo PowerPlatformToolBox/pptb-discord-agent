@@ -70,14 +70,30 @@ export async function handleRelease(
       .setDescription(description)
       .setColor(0x5865F2) // Discord blurple
       .addFields(
-        { name: '📦 Version', value: release.tag_name, inline: true },
-        { name: '📂 Repository', value: payload.repository.full_name, inline: true }
+        { name: '📦 Version', value: release.tag_name, inline: true }
       )
       .setTimestamp(new Date(release.published_at))
       .setFooter({ 
         text: `${payload.repository.name} • ${release.prerelease ? 'Pre-release' : 'Stable Release'}`,
         iconURL: payload.repository.owner?.avatar_url 
       });
+
+    // Build meta details
+    const flags: string[] = [];
+    if (release.prerelease) flags.push('Pre-release');
+    if (release.draft) flags.push('Draft');
+
+    const metaLines: string[] = [];
+    metaLines.push('- Commits in this release: _see GitHub compare view_');
+    if (flags.length) metaLines.push(`- Flags: ${flags.join(', ')}`);
+
+    if (metaLines.length) {
+      embed.addFields({
+        name: 'ℹ️ Details',
+        value: metaLines.join('\n'),
+        inline: false
+      });
+    }
 
     // Add links section
     embed.addFields({
@@ -100,7 +116,7 @@ export async function handleRelease(
 
       if (windowsAsset) {
         const winButton = new ButtonBuilder()
-          .setLabel('Download for Windows')
+          .setLabel('Windows')
           .setURL(windowsAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
         
@@ -122,7 +138,7 @@ export async function handleRelease(
 
       if (macAsset) {
         const macButton = new ButtonBuilder()
-          .setLabel('Download for macOS')
+          .setLabel('macOS')
           .setURL(macAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
         
@@ -143,7 +159,7 @@ export async function handleRelease(
 
       if (linuxAsset) {
         const linuxButton = new ButtonBuilder()
-          .setLabel('Download for Linux')
+          .setLabel('Linux')
           .setURL(linuxAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
         
