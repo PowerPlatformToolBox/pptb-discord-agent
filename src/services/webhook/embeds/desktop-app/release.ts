@@ -1,9 +1,9 @@
 /**
  * Desktop-app release embed factory
  */
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import type { ReleaseEmbedParams, EmbedFactoryResult } from '../types';
-import { DISCORD_COLORS, PLATFORM_EMOJIS } from '../../../../constants/discord';
+import { DISCORD_COLORS } from '../../../../constants/discord';
 
 /**
  * Creates a release announcement embed for desktop-app
