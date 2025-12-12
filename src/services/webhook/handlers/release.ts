@@ -1,11 +1,12 @@
 /**
  * GitHub release webhook handler
  */
-
-import { type Client, EmbedBuilder, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { type Client, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getLogger } from '../../../utils/logger';
 import { loadWebhookConfig } from '../../../config/webhook';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
+import { createDesktopAppReleaseEmbed } from '../embeds';
+import { PLATFORM_EMOJIS } from '../../../constants/discord';
 
 export async function handleRelease(
   payload: GitHubWebhookPayload,
@@ -57,49 +58,10 @@ export async function handleRelease(
       return;
     }
 
-    // Format release body (trim to Discord's 4096 char limit)
-    let description = release.body || 'No release notes provided';
-    if (description.length > 4000) {
-      description = description.substring(0, 3997) + '...';
-    }
-
-    // Create embed for release announcement
-    const embed = new EmbedBuilder()
-      .setTitle(`🚀 ${release.name || release.tag_name}`)
-      .setURL(release.html_url)
-      .setDescription(description)
-      .setColor(0x5865F2) // Discord blurple
-      .addFields(
-        { name: '📦 Version', value: release.tag_name, inline: true }
-      )
-      .setTimestamp(new Date(release.published_at))
-      .setFooter({ 
-        text: `${payload.repository.name} • ${release.prerelease ? 'Pre-release' : 'Stable Release'}`,
-        iconURL: payload.repository.owner?.avatar_url 
-      });
-
-    // Build meta details
-    const flags: string[] = [];
-    if (release.prerelease) flags.push('Pre-release');
-    if (release.draft) flags.push('Draft');
-
-    const metaLines: string[] = [];
-    metaLines.push('- Commits in this release: _see GitHub compare view_');
-    if (flags.length) metaLines.push(`- Flags: ${flags.join(', ')}`);
-
-    if (metaLines.length) {
-      embed.addFields({
-        name: 'ℹ️ Details',
-        value: metaLines.join('\n'),
-        inline: false
-      });
-    }
-
-    // Add links section
-    embed.addFields({
-      name: '🔗 Links',
-      value: `[View Release](${release.html_url}) • [Source Code](${release.zipball_url})`,
-      inline: false
+    // Use the embed factory to create the embed
+    const { embed, content } = createDesktopAppReleaseEmbed({
+      release,
+      payload
     });
 
     // Create download buttons for different platforms
@@ -113,7 +75,6 @@ export async function handleRelease(
         asset.name.toLowerCase().endsWith('.exe') || 
         asset.name.toLowerCase().includes('win')
       );
-
       if (windowsAsset) {
         const winButton = new ButtonBuilder()
           .setLabel('Windows')
@@ -121,7 +82,7 @@ export async function handleRelease(
           .setStyle(ButtonStyle.Link);
         
         try {
-          winButton.setEmoji({ name: 'm1', id: '1446014221820231821' });
+          winButton.setEmoji(PLATFORM_EMOJIS.WINDOWS);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
@@ -135,7 +96,6 @@ export async function handleRelease(
         asset.name.toLowerCase().includes('darwin') ||
         asset.name.toLowerCase().endsWith('.dmg')
       );
-
       if (macAsset) {
         const macButton = new ButtonBuilder()
           .setLabel('macOS')
@@ -143,7 +103,7 @@ export async function handleRelease(
           .setStyle(ButtonStyle.Link);
         
         try {
-          macButton.setEmoji({ name: 'a1', id: '1446014603883446353' });
+          macButton.setEmoji(PLATFORM_EMOJIS.MACOS);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
@@ -156,7 +116,6 @@ export async function handleRelease(
         asset.name.toLowerCase().endsWith('.appimage') ||
         asset.name.toLowerCase().includes('linux')
       );
-
       if (linuxAsset) {
         const linuxButton = new ButtonBuilder()
           .setLabel('Linux')
@@ -164,7 +123,7 @@ export async function handleRelease(
           .setStyle(ButtonStyle.Link);
         
         try {
-          linuxButton.setEmoji({ name: 'linux', id: '1446019504483205160' });
+          linuxButton.setEmoji(PLATFORM_EMOJIS.LINUX);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
@@ -180,7 +139,7 @@ export async function handleRelease(
     }
 
     await channel.send({
-      content: '🎉 **New release available!**',
+      content,
       embeds: [embed],
       components: buttons,
     });
