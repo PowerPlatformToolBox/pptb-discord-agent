@@ -39,6 +39,18 @@ export class WebhookServer {
   }
 
   private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+        // Health check endpoint for Railway
+    if (req.url === '/health' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        status: 'healthy',
+        uptime: process.uptime(),
+        discord: this.discordClient?.isReady() ? 'connected' : 'connecting',
+        timestamp: new Date().toISOString()
+      }));
+      return;
+    }
+
     if (req.method !== 'POST') {
       res.writeHead(405, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Method not allowed' }));
