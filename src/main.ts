@@ -105,6 +105,10 @@ async function main(): Promise<void> {
     const webhookServer = createWebhookServer(webhookHandlers);
     webhookServer.setDiscordClient(client);
 
+        // Start webhook server immediately (before Discord login)
+    // This allows Railway to health check the server
+    webhookServer.start();
+
     // Global error handlers
     process.on('unhandledRejection', (error: Error) => {
       logger.error('Unhandled promise rejection', {
@@ -124,11 +128,8 @@ async function main(): Promise<void> {
     // Login to Discord
     await client.login(config.discord.token);
 
-    // Start webhook server after Discord client is ready
-    client.once('ready', () => {
-      webhookServer.start();
-    });
-
+106
+                   
     // Cleanup on exit
     process.on('SIGINT', () => {
       logger.info('Shutting down...');
