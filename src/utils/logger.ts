@@ -2,68 +2,73 @@
  * Application logger using Winston
  */
 
-import winston from 'winston';
-import { getConfig } from '../config/config';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createLogger, format, transports, type Logger } from 'winston';
 
-const { combine, timestamp, printf, colorize, errors } = winston.format;
+const { combine, timestamp, printf, errors, splat, metadata, colorize } = format;
 
-const logFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
-  let msg = `${timestamp} [${level}]: ${message}`;
+let loggerInstance: Logger | null = null;
 
-  if (Object.keys(metadata).length > 0) {
-    msg += ` ${JSON.stringify(metadata)}`;
-  }
+function createAppLogger(): Logger {
+  // Ensure logs directory exists only when file logging is enabled
+  const env = process.env.NODE_ENV ?? 'development';
+  const enableFileLogs = env !== 'production';
+  const level = env === 'development' ? 'debug' : 'info';
 
-  if (stack) {
-    msg += `\n${stack}`;
-  }
-
-  return msg;
-});
-
-/**
- * Create and configure Winston logger instance
- */
-export function createLogger(): winston.Logger {
-  const config = getConfig();
-
-  return winston.createLogger({
-    level: config.logging.level,
-    format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), errors({ stack: true })),
-    defaultMeta: { service: 'pptb-discord-assistant' },
-    transports: [
-      new winston.transports.File({
-        filename: 'logs/error.log',
-        level: 'error',
-        format: combine(timestamp(), winston.format.json()),
-      }),
-      new winston.transports.File({
-        filename: 'logs/combined.log',
-        format: combine(timestamp(), winston.format.json()),
-      }),
-    ],
-  });
-}
-
-let loggerInstance: winston.Logger | null = null;
-
-/**
- * Get logger instance (singleton)
- */
-export function getLogger(): winston.Logger {
-  if (!loggerInstance) {
-    loggerInstance = createLogger();
-
-    // Add console transport in non-production
-    const config = getConfig();
-    if (config.nodeEnv !== 'production') {
-      loggerInstance.add(
-        new winston.transports.Console({
-          format: combine(colorize(), timestamp({ format: 'HH:mm:ss' }), logFormat),
-        })
-      );
+  let logDir = '';
+  if (enableFileLogs) {
+    logDir = path.resolve(process.cwd(), 'logs');
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
     }
   }
 
+  const consoleFormat = combine(
+    colorize(),
+    timestamp(),
+    errors({ stack: true }),
+    splat(),
+    metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
+    printf(({ timestamp: ts, level: lv, message, metadata: md, stack }) => {
+      const meta = Object.keys(md || {}).length ? ` ${JSON.stringify(md)}` : '';
+      const stackMsg = stack ? `\n${stack}` : '';
+      return `${ts} [${lv}]: ${message}${meta}${stackMsg}`;
+    })
+  );
+
+  const fileFormat = combine(
+    timestamp(),
+    errors({ stack: true }),
+    splat(),
+    metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
+    format.json()
+  );
+
+  const transportsList: (transports.ConsoleTransportInstance | transports.FileTransportInstance)[] =
+    [new transports.Console({ format: consoleFormat })];
+
+  if (enableFileLogs) {
+    transportsList.push(
+      new transports.File({ filename: path.join(logDir, 'error.log'), level: 'error' }),
+      new transports.File({ filename: path.join(logDir, 'combined.log') })
+    );
+  }
+
+  return createLogger({
+    level,
+    format: fileFormat,
+    transports: transportsList,
+    exitOnError: false,
+  });
+}
+
+/**
+ * Returns a singleton Winston logger instance.
+ */
+export function getLogger(): Logger {
+  if (!loggerInstance) {
+    loggerInstance = createAppLogger();
+  }
   return loggerInstance;
 }

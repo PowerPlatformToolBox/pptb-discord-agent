@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "pptb-discord-assistant",
   "version": "1.0.0",
-  "description": "Discord bot with GitHub integration for Power Platform Tool Box",
+  "description": "Discord bot with GitHub integration for Power Platform ToolBox",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",

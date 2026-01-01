@@ -27,7 +27,6 @@ Create a GitHub issue in PowerPlatformToolBox repositories.
 | 🖥️ Desktop App (Main Project) | PowerPlatformToolBox | Main desktop application |
 | 🌐 Website | PowerPlatformToolBox | powerplatformtoolbox.com website |
 | 📚 Documentation | PowerPlatformToolBox | Documentation site |
-| 🧪 Mockaroo Munger (Testing) | MattBerg11 | Mockaroo data munger tool (private, testing) |
 
 **Examples:**
 
@@ -102,12 +101,6 @@ Check if bot is online and responsive.
 ```
 Pong! Latency: 42ms
 ```
-
----
-
-## Admin Commands
-
-*Coming soon*
 
 ---
 
