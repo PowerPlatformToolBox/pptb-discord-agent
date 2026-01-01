@@ -14,7 +14,13 @@
     "type-check": "tsc --noEmit",
     "prepare": "husky || true"
   },
-  "keywords": ["discord", "bot", "github", "powerplatform", "typescript"],
+  "keywords": [
+    "discord",
+    "bot",
+    "github",
+    "powerplatform",
+    "typescript"
+  ],
   "author": "PowerPlatformToolBox",
   "license": "GPL-3.0",
   "engines": {
