@@ -9,16 +9,20 @@ import { createLogger, format, transports, type Logger } from 'winston';
 const { combine, timestamp, printf, errors, splat, metadata, colorize } = format;
 
 let loggerInstance: Logger | null = null;
+const childLoggers: Record<string, Logger> = {};
 
 function createAppLogger(): Logger {
-  // Ensure logs directory exists only when file logging is enabled
+  // Console-only logging by default; file logging disabled unless explicitly enabled via env
   const env = process.env.NODE_ENV ?? 'development';
-  const enableFileLogs = env !== 'production';
+  const enableFileLogs = process.env.ENABLE_FILE_LOGS === 'true'; // Disabled by default
   const level = env === 'development' ? 'debug' : 'info';
 
   let logDir = '';
   if (enableFileLogs) {
-    logDir = path.resolve(process.cwd(), 'logs');
+    // Use LOG_DIR env var or default to ./logs
+    logDir = process.env.LOG_DIR
+      ? path.resolve(process.env.LOG_DIR)
+      : path.resolve(process.cwd(), 'logs');
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir, { recursive: true });
     }
@@ -66,9 +70,18 @@ function createAppLogger(): Logger {
 /**
  * Returns a singleton Winston logger instance.
  */
-export function getLogger(): Logger {
+export function getLogger(moduleName?: string): Logger {
   if (!loggerInstance) {
     loggerInstance = createAppLogger();
   }
-  return loggerInstance;
+
+  if (!moduleName) {
+    return loggerInstance;
+  }
+
+  if (!childLoggers[moduleName]) {
+    childLoggers[moduleName] = loggerInstance.child({ module: moduleName });
+  }
+
+  return childLoggers[moduleName];
 }

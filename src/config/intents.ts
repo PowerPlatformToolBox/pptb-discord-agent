@@ -11,9 +11,4 @@ export const INTENTS = [
   GatewayIntentBits.MessageContent,
 ];
 
-export const PARTIALS = [
-  Partials.Message,
-  Partials.Channel,
-  Partials.Reaction,
-  Partials.User,
-];
+export const PARTIALS = [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User];

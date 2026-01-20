@@ -2,17 +2,17 @@
  * GitHub issue management service
  */
 
-import { getGitHubClient } from './githubClient';
-import { getLogger } from '../../utils/logger';
-import { GitHubAPIError } from '../../types/errors';
-import { sanitizeIssueInput, validateLabels, validateRepoName } from '../../utils/validators';
 import type {
-  GitHubServiceResult,
-  CreateIssueResult,
   CreateIssueParams,
+  CreateIssueResult,
   GitHubIssue,
   GitHubRepository,
+  GitHubServiceResult,
 } from '../../types';
+import { GitHubAPIError } from '../../types/errors';
+import { getLogger } from '../../utils/logger';
+import { sanitizeIssueInput, validateLabels, validateRepoName } from '../../utils/validators';
+import { getGitHubClient } from './githubClient';
 
 export class GitHubIssueService {
   private readonly logger = getLogger();
@@ -73,13 +73,15 @@ export class GitHubIssueService {
 
   public async listRepositories(): Promise<GitHubServiceResult<GitHubRepository[]>> {
     try {
-      const repos = await this.client.request<Array<{
-        name: string;
-        description: string | null;
-        html_url: string;
-        stargazers_count: number;
-        language: string | null;
-      }>>(`/orgs/${this.client.getOrg()}/repos?type=all&sort=updated&per_page=10`);
+      const repos = await this.client.request<
+        Array<{
+          name: string;
+          description: string | null;
+          html_url: string;
+          stargazers_count: number;
+          language: string | null;
+        }>
+      >(`/orgs/${this.client.getOrg()}/repos?type=all&sort=updated&per_page=10`);
 
       const repositories: GitHubRepository[] = repos.map((repo) => ({
         name: repo.name,

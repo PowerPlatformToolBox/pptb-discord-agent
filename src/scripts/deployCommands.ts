@@ -6,8 +6,8 @@ import { REST, Routes } from 'discord.js';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfig } from '../config/config';
-import { getLogger } from '../utils/logger';
 import type { BotCommand } from '../types';
+import { getLogger } from '../utils/logger';
 
 async function deployCommands(): Promise<void> {
   try {
@@ -18,9 +18,9 @@ async function deployCommands(): Promise<void> {
     // When run via tsx, use dist folder (production build)
     // __dirname will be /app/dist/scripts after compilation
     const commandsPath = join(__dirname, '..', 'handlers', 'commands');
-    
+
     logger.info('Loading commands from', { path: commandsPath });
-    
+
     const commandFolders = readdirSync(commandsPath);
 
     for (const folder of commandFolders) {
@@ -31,7 +31,7 @@ async function deployCommands(): Promise<void> {
 
       for (const file of commandFiles) {
         const filePath = join(folderPath, file);
-        const commandModule = require(filePath) as Record<string, BotCommand>;
+        const commandModule = (await import(filePath)) as Record<string, BotCommand>;
         const command = Object.values(commandModule)[0];
 
         if (command && 'data' in command && 'execute' in command) {
@@ -57,10 +57,10 @@ async function deployCommands(): Promise<void> {
 
     const deploymentType = config.discord.guildId ? 'guild (instant)' : 'global (up to 1 hour)';
 
-    logger.info('Deploying commands', { 
-      count: commands.length, 
+    logger.info('Deploying commands', {
+      count: commands.length,
       type: deploymentType,
-      guildId: config.discord.guildId || 'N/A'
+      guildId: config.discord.guildId || 'N/A',
     });
 
     const data = await rest.put(route, {
@@ -69,7 +69,7 @@ async function deployCommands(): Promise<void> {
 
     logger.info('Successfully deployed commands', {
       count: Array.isArray(data) ? data.length : 0,
-      type: deploymentType
+      type: deploymentType,
     });
 
     if (!config.discord.guildId) {

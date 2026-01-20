@@ -2,15 +2,15 @@
  * Interaction create event handler (slash commands)
  */
 
-import { Events, type Interaction, type ChatInputCommandInteraction } from 'discord.js';
+import { Events, type ChatInputCommandInteraction, type Interaction } from 'discord.js';
+import type { BotCommand, InteractionCreateEvent } from '../../types';
 import { getLogger } from '../../utils/logger';
-import type { InteractionCreateEvent, BotCommand } from '../../types';
+
+const logger = getLogger('InteractionCreate');
 
 export const interactionCreateEvent: InteractionCreateEvent = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction): Promise<void> {
-    const logger = getLogger();
-
     if (!interaction.isChatInputCommand()) {
       return;
     }

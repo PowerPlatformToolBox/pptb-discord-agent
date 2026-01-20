@@ -2,12 +2,12 @@
  * GitHub webhook HTTP server
  */
 
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import type { Client } from 'discord.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { getLogger } from '../../utils/logger';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { loadWebhookConfig } from '../../config/webhook';
 import type { GitHubWebhookPayload } from '../../types/webhook';
-import type { Client } from 'discord.js';
+import { getLogger } from '../../utils/logger';
 
 export class WebhookServer {
   private readonly logger = getLogger();
@@ -39,15 +39,17 @@ export class WebhookServer {
   }
 
   private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-        // Health check endpoint for Railway
+    // Health check endpoint for Railway
     if (req.url === '/health' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        status: 'healthy',
-        uptime: process.uptime(),
-        discord: this.discordClient?.isReady() ? 'connected' : 'connecting',
-        timestamp: new Date().toISOString()
-      }));
+      res.end(
+        JSON.stringify({
+          status: 'healthy',
+          uptime: process.uptime(),
+          discord: this.discordClient?.isReady() ? 'connected' : 'connecting',
+          timestamp: new Date().toISOString(),
+        })
+      );
       return;
     }
 

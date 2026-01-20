@@ -7,15 +7,15 @@
  */
 export const DISCORD_COLORS = {
   /** Discord Blurple - #5865F2 */
-  BLURPLE: 0x5865F2,
+  BLURPLE: 0x5865f2,
   /** Green - #57F287 */
-  GREEN: 0x57F287,
+  GREEN: 0x57f287,
   /** Yellow - #FEE75C */
-  YELLOW: 0xFEE75C,
+  YELLOW: 0xfee75c,
   /** Red - #ED4245 */
-  RED: 0xED4245,
+  RED: 0xed4245,
   /** Fuchsia - #EB459E */
-  FUCHSIA: 0xEB459E,
+  FUCHSIA: 0xeb459e,
 } as const;
 
 /**

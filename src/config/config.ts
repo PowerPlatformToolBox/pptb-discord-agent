@@ -2,9 +2,9 @@
  * Application configuration management
  */
 
-import { validateEnvironment } from './environment';
-import { ConfigurationError } from '../types/errors';
 import type { AppConfig } from '../types';
+import { ConfigurationError } from '../types/errors';
+import { validateEnvironment } from './environment';
 
 let cachedConfig: AppConfig | null = null;
 
@@ -34,9 +34,12 @@ export function loadConfig(): AppConfig {
         channelId: env.LOG_CHANNEL_ID,
       },
       reaction: {
-        logEmoji: env.REACTION_EMOJI ?? '⭐',
+        logEmoji: env.REACTION_EMOJI ?? '📝',
       },
       nodeEnv: env.NODE_ENV ?? 'development',
+      sentry: {
+        dsn: env.SENTRY_DSN,
+      },
     };
 
     return cachedConfig;

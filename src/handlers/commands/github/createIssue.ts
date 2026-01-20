@@ -19,8 +19,7 @@ export const createIssueCommand: BotCommand = {
         .addChoices(
           { name: '🖥️ Desktop App (Main Project)', value: 'desktop-app' },
           { name: '🌐 Website', value: 'pptb-web' },
-          { name: '📚 Documentation', value: 'pptb-docs-web' },
-          { name: '🧪 Mockaroo Munger (Testing)', value: 'pptb-mockaroo-munger' }
+          { name: '📚 Documentation', value: 'pptb-docs-web' }
         )
     )
     .addStringOption((option) =>
@@ -46,9 +45,7 @@ export const createIssueCommand: BotCommand = {
     const labels = labelsInput ? labelsInput.split(',').map((label) => label.trim()) : [];
     const body = `${description}\n\n---\n*Created by ${interaction.user.tag} via Discord*`;
 
-    // Determine the org/owner based on repository
-    const isTestingRepo = repository === 'pptb-mockaroo-munger';
-    const owner = isTestingRepo ? 'MattBerg11' : 'PowerPlatformToolBox';
+    const owner = 'PowerPlatformToolBox';
 
     const issueService = getGitHubIssueService();
     const result = await issueService.createIssue({
@@ -60,12 +57,12 @@ export const createIssueCommand: BotCommand = {
     });
 
     if (result.success && result.data) {
-      const repoEmoji = {
-        'desktop-app': '🖥️',
-        'pptb-web': '🌐',
-        'pptb-docs-web': '📚',
-        'pptb-mockaroo-munger': '🧪',
-      }[repository] || '';
+      const repoEmoji =
+        {
+          'desktop-app': '🖥️',
+          'pptb-web': '🌐',
+          'pptb-docs-web': '📚',
+        }[repository] || '';
 
       const embed = createSuccessEmbed(
         'Issue Created',

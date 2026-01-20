@@ -1,17 +1,14 @@
 /**
  * GitHub release webhook handler
  */
-import { type Client, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { getLogger } from '../../../utils/logger';
+import { type Client, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } from 'discord.js';
 import { loadWebhookConfig } from '../../../config/webhook';
-import type { GitHubWebhookPayload } from '../../../types/webhook';
-import { createDesktopAppReleaseEmbed } from '../embeds';
 import { PLATFORM_EMOJIS } from '../../../constants/discord';
+import type { GitHubWebhookPayload } from '../../../types/webhook';
+import { getLogger } from '../../../utils/logger';
+import { createDesktopAppReleaseEmbed } from '../embeds';
 
-export async function handleRelease(
-  payload: GitHubWebhookPayload,
-  client: Client
-): Promise<void> {
+export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
   const logger = getLogger();
   const config = loadWebhookConfig();
 
@@ -30,7 +27,7 @@ export async function handleRelease(
 
   // Check if repository is in watched list
   if (!config.watchedRepositories.includes(payload.repository.name)) {
-    logger.debug('Skipping unwatched repository', { 
+    logger.debug('Skipping unwatched repository', {
       repo: payload.repository.name,
       watched: config.watchedRepositories,
     });
@@ -51,9 +48,9 @@ export async function handleRelease(
       channel.type !== ChannelType.GuildAnnouncement &&
       channel.type !== ChannelType.DM
     ) {
-      logger.error('Channel type does not support send', { 
+      logger.error('Channel type does not support send', {
         channelId: config.releaseAnnouncementChannel,
-        channelType: channel.type 
+        channelType: channel.type,
       });
       return;
     }
@@ -61,79 +58,80 @@ export async function handleRelease(
     // Use the embed factory to create the embed
     const { embed, content } = createDesktopAppReleaseEmbed({
       release,
-      payload
+      payload,
     });
 
     // Create download buttons for different platforms
     const buttons: ActionRowBuilder<ButtonBuilder>[] = [];
-    
+
     if (release.assets && release.assets.length > 0) {
       const downloadButtons: ButtonBuilder[] = [];
 
       // Windows installer
-      const windowsAsset = release.assets.find(asset => 
-        asset.name.toLowerCase().endsWith('.exe') || 
-        asset.name.toLowerCase().includes('win')
+      const windowsAsset = release.assets.find(
+        (asset) =>
+          asset.name.toLowerCase().endsWith('.exe') || asset.name.toLowerCase().includes('win')
       );
       if (windowsAsset) {
         const winButton = new ButtonBuilder()
           .setLabel('Windows')
           .setURL(windowsAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
-        
+
         try {
           winButton.setEmoji(PLATFORM_EMOJIS.WINDOWS);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
-        
+
         downloadButtons.push(winButton);
       }
 
       // macOS installer
-      const macAsset = release.assets.find(asset => 
-        asset.name.toLowerCase().includes('mac') || 
-        asset.name.toLowerCase().includes('darwin') ||
-        asset.name.toLowerCase().endsWith('.dmg')
+      const macAsset = release.assets.find(
+        (asset) =>
+          asset.name.toLowerCase().includes('mac') ||
+          asset.name.toLowerCase().includes('darwin') ||
+          asset.name.toLowerCase().endsWith('.dmg')
       );
       if (macAsset) {
         const macButton = new ButtonBuilder()
           .setLabel('macOS')
           .setURL(macAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
-        
+
         try {
           macButton.setEmoji(PLATFORM_EMOJIS.MACOS);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
-        
+
         downloadButtons.push(macButton);
       }
 
       // Linux AppImage
-      const linuxAsset = release.assets.find(asset => 
-        asset.name.toLowerCase().endsWith('.appimage') ||
-        asset.name.toLowerCase().includes('linux')
+      const linuxAsset = release.assets.find(
+        (asset) =>
+          asset.name.toLowerCase().endsWith('.appimage') ||
+          asset.name.toLowerCase().includes('linux')
       );
       if (linuxAsset) {
         const linuxButton = new ButtonBuilder()
           .setLabel('Linux')
           .setURL(linuxAsset.browser_download_url)
           .setStyle(ButtonStyle.Link);
-        
+
         try {
           linuxButton.setEmoji(PLATFORM_EMOJIS.LINUX);
         } catch {
           // If custom emoji fails, just use label without emoji
         }
-        
+
         downloadButtons.push(linuxButton);
       }
 
       if (downloadButtons.length > 0) {
-        const row = new ActionRowBuilder<ButtonBuilder>()
-          .addComponents(...downloadButtons);
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(...downloadButtons);
         buttons.push(row);
       }
     }

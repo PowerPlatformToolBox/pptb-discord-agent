@@ -2,8 +2,8 @@
  * Environment variable schema and validation
  */
 
-import { z } from 'zod';
 import { config as dotenvConfig } from 'dotenv';
+import { z } from 'zod';
 import type { EnvironmentVariables } from '../types';
 
 // Load environment variables
@@ -16,9 +16,12 @@ const environmentSchema = z.object({
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required'),
   GITHUB_ORG: z.string().default('PowerPlatformToolBox'),
   LOG_CHANNEL_ID: z.string().min(1, 'LOG_CHANNEL_ID is required'),
-  REACTION_EMOJI: z.string().default('⭐'),
+  REACTION_EMOJI: z.string().default('📝'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  SENTRY_DSN: z.string().optional(),
+  ENABLE_FILE_LOGS: z.enum(['true', 'false']).optional().default('false'),
+  LOG_DIR: z.string().optional().default('./logs'),
 });
 
 /**

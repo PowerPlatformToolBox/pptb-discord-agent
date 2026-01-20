@@ -25,25 +25,26 @@
   "license": "GPL-3.0",
   "engines": {
     "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "pnpm": ">=10.18.3"
   },
-  "packageManager": "pnpm@9.14.4",
+  "packageManager": "pnpm@10.18.3",
   "dependencies": {
+    "@sentry/node": "^7.5.0",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "winston": "^3.17.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@typescript-eslint/eslint-plugin": "^8.18.2",
-    "@typescript-eslint/parser": "^8.18.2",
-    "eslint": "^9.16.0",
+    "@types/node": "^20.19.30",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.9.3"
   }
 }

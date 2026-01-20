@@ -2,11 +2,11 @@
  * Message reaction add event handler
  */
 
-import { Events, type MessageReaction, type User, type TextChannel, ChannelType } from 'discord.js';
+import { ChannelType, Events, type MessageReaction, type TextChannel, type User } from 'discord.js';
 import { getConfig } from '../../config/config';
-import { getLogger } from '../../utils/logger';
-import { createMessageLogEmbed, createErrorEmbed } from '../../utils/embedBuilder';
 import type { MessageReactionAddEvent } from '../../types';
+import { createErrorEmbed, createMessageLogEmbed } from '../../utils/embedBuilder';
+import { getLogger } from '../../utils/logger';
 
 export const messageReactionAddEvent: MessageReactionAddEvent = {
   name: Events.MessageReactionAdd,

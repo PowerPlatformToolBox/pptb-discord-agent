@@ -16,9 +16,7 @@ export function createDesktopAppThreadStarterEmbed(
   const embed = new EmbedBuilder()
     .setTitle(`💬 Discussion: ${release.name || release.tag_name}`)
     .setURL(release.html_url)
-    .setDescription(
-      'Use this thread to discuss the release, ask questions, or report issues.'
-    )
+    .setDescription('Use this thread to discuss the release, ask questions, or report issues.')
     .setColor(DISCORD_COLORS.BLURPLE)
     .addFields(
       { name: '📦 Version', value: release.tag_name, inline: true },
@@ -29,12 +27,12 @@ export function createDesktopAppThreadStarterEmbed(
   if (payload.repository.owner?.avatar_url) {
     embed.setFooter({
       text: payload.repository.name,
-      iconURL: payload.repository.owner.avatar_url
+      iconURL: payload.repository.owner.avatar_url,
     });
   }
 
   return {
     embed,
-    content: undefined
+    content: undefined,
   };
 }

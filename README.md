@@ -5,6 +5,7 @@
 ## Overview
 
 TypeScript Discord bot featuring:
+
 - **Message reaction logging** to dedicated Discord channel
 - **GitHub issue creation** via slash commands
 - **Automated discussion threads** for GitHub project items
@@ -15,27 +16,26 @@ TypeScript Discord bot featuring:
 ## Features
 
 ### Discord Integration
+
 - ⭐ Message logging via emoji reactions
 - 💬 Slash commands with full type safety
 - 🧵 Auto-create threads for labeled GitHub items
-- 🎨 Rich embeds for user feedback
-- ⚠️ Comprehensive error handling
 
 ### GitHub Integration
+
 - 📝 Create issues in PowerPlatformToolBox repos
 - 🔍 Query organization repositories
-- 💭 Add comments to issues
-- 🧵 Auto-create discussion threads for labeled items
 - 🚀 Announce new releases automatically
-- ✅ Input validation and sanitization
 
 ### GitHub Webhooks
+
 - 🔔 **Project Discussion Threads**: When an issue/PR is labeled with `DiscordDiscussion`, a thread is automatically created
-- 🎉 **Release Announcements**: Full releases from `desktop-app` are announced with @everyone
+- 🎉 **Release Announcements**: Full releases from `desktop-app` are announced
 - 🔒 HMAC signature verification for security
 - ⚙️ Configurable port, channels, and labels
 
 ### Architecture
+
 - 🏗️ Modular service design
 - 📦 Singleton patterns for stateless services
 - 🔐 Environment validation with Zod
@@ -47,10 +47,12 @@ TypeScript Discord bot featuring:
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm (or npm/yarn)
+- **Node.js 18+**
+- **pnpm (required)** — workspace uses `pnpm@10.x` (recommended `pnpm@10.18.3`). Do not use npm/yarn for workspace installs.
 - Discord Bot Token
 - GitHub Personal Access Token
+- Discord: `Manage Server` permission to invite bot to server
+- GitHub: `Webhook management` permissions to create and edit webhooks
 
 ### Installation
 
@@ -100,6 +102,64 @@ NODE_ENV=development
 LOG_LEVEL=debug
 ```
 
+Notes on environment variables
+
+- `DISCORD_BOT_TOKEN`: Bot token from Discord Developer Portal (required).
+- `DISCORD_CLIENT_ID`: Application client ID (used when deploying commands).
+- `DISCORD_GUILD_ID`: (required) The ID of the Discord server.
+- `GITHUB_TOKEN`: Personal access token with repo permissions (required for GitHub API calls).
+- `GITHUB_ORG`: Organization used when creating/querying repos (default `PowerPlatformToolBox`).
+- `LOG_CHANNEL_ID`: Channel ID where structured logs/alerts are posted (required).
+- `REACTION_EMOJI`: Emoji used to trigger message logging (default `📝`).
+- `WEBHOOK_PORT`: Port the webhook server listens on when enabled (default `3000`).
+- `WEBHOOK_SECRET`: HMAC secret used to validate GitHub webhook payloads (required for webhook security).
+- `PROJECT_THREAD_CHANNEL_ID`: Channel ID where auto-created discussion threads are created.
+- `RELEASE_CHANNEL_ID`: Channel ID where release announcements are posted.
+- `PROJECT_DISCUSSION_LABEL`: GitHub label that triggers discussion thread creation (default `DiscordDiscussion`).
+- `NODE_ENV` / `LOG_LEVEL`: Standard environment and logging level settings.
+
+## Developer Setup
+
+Follow these steps to get a local development environment matching CI/maintainer expectations.
+
+- Ensure Node.js 18+ is installed. We recommend using `pnpm` (workspace aligns to `pnpm@10.x`).
+- Copy the example env and fill secrets locally (do not commit):
+
+```bash
+cp .env.example .env
+# edit .env with your tokens and IDs
+```
+
+- Install dependencies and start dev watch:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+- Quick verification (after build):
+
+```bash
+pnpm build
+pnpm type-check
+ls -la dist/handlers || echo "Missing compiled handlers"
+```
+
+- Before opening a PR run:
+
+```bash
+pnpm format
+pnpm lint
+pnpm type-check
+```
+
+If you need to register slash commands in a development guild, run:
+
+```bash
+pnpm build
+pnpm run deploy-commands
+```
+
 ## Project Structure
 
 ```
@@ -132,12 +192,15 @@ pnpm type-check       # Validate TypeScript types
 ## Bot Commands
 
 ### `/ping`
+
 Check bot latency and API response time
 
 ### `/create-issue`
+
 Create a GitHub issue in PowerPlatformToolBox repositories
 
 **Options:**
+
 - `repository` (required) - Repository name
 - `title` (required) - Issue title
 - `description` (required) - Issue description
@@ -148,6 +211,7 @@ Create a GitHub issue in PowerPlatformToolBox repositories
 ### Automatic Discussion Threads
 
 When you label an issue or PR with `DiscordDiscussion`, the bot automatically:
+
 1. Creates a thread in your designated channel
 2. Posts an embed with item details
 3. Includes author, labels, and direct link
@@ -156,6 +220,7 @@ When you label an issue or PR with `DiscordDiscussion`, the bot automatically:
 ### Release Announcements
 
 When a full release is published on `desktop-app`:
+
 1. Bot posts announcement with @everyone
 2. Includes version, release notes, and link
 3. Only for non-draft, non-prerelease versions
@@ -193,7 +258,6 @@ When a full release is published on `desktop-app`:
 
 - **Discord.js v14+** - Discord bot framework
 - **TypeScript 5.7+** - Type-safe JavaScript
-- **Octokit** - GitHub API client
 - **Winston** - Structured logging
 - **Zod** - Runtime schema validation
 - **ESLint + Prettier** - Code quality
@@ -202,10 +266,12 @@ When a full release is published on `desktop-app`:
 ## Discord Permissions
 
 **Required OAuth2 Scopes:**
+
 - `bot`
 - `applications.commands`
 
 **Required Bot Permissions:**
+
 - View Channels
 - Send Messages
 - Send Messages in Threads
@@ -219,6 +285,7 @@ When a full release is published on `desktop-app`:
 ## Standards Alignment
 
 This project follows:
+
 - PowerPlatformToolBox desktop-app architecture patterns
 - TypeScript strict mode standards
 - Discord.js v14+ best practices
@@ -228,8 +295,8 @@ This project follows:
 
 - [Setup & Reference Guide](docs/SETUP_AND_REFERENCE_GUIDE.md)
 - [Project Structure](docs/PROJECT_STRUCTURE.md)
-- [Development Guide](docs/TYPESCRIPT_BOT_META_PROMPT.md)
-- [Package Contents](docs/PACKAGE_CONTENTS.md)
+- [Commands Reference](docs/COMMANDS.md)
+- [Railway / Deployment notes](docs/RAILWAY_SETUP.md)
 - **[Webhook Setup Guide](docs/WEBHOOK_SETUP.md)** ⭐
 
 ## License
@@ -239,6 +306,7 @@ GPL-3.0 - See [LICENSE](LICENSE) for details
 ## Contributing
 
 Contributions welcome! Please:
+
 1. Follow TypeScript strict mode
 2. Include comprehensive error handling
 3. Add structured logging

@@ -23,11 +23,16 @@ export interface ReactionConfig {
   logEmoji: string;
 }
 
+export interface SentryConfig {
+  dsn?: string;
+}
+
 export interface AppConfig {
   discord: DiscordConfig;
   github: GitHubConfig;
   logging: LoggingConfig;
   reaction: ReactionConfig;
+  sentry?: SentryConfig;
   nodeEnv: 'development' | 'production' | 'test';
 }
 
@@ -41,4 +46,7 @@ export interface EnvironmentVariables {
   REACTION_EMOJI?: string;
   NODE_ENV?: 'development' | 'production' | 'test';
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
+  SENTRY_DSN?: string;
+  ENABLE_FILE_LOGS?: string;
+  LOG_DIR?: string;
 }

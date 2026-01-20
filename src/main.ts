@@ -7,12 +7,13 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
-import { getLogger } from './utils/logger';
-import { createWebhookServer } from './services/webhook/webhookServer';
 import { handleProjectItem } from './services/webhook/handlers/projectItem';
 import { handleRelease } from './services/webhook/handlers/release';
+import { createWebhookServer } from './services/webhook/webhookServer';
 import type { BotCommand, BotEvent } from './types';
 import type { GitHubWebhookPayload } from './types/webhook';
+import { getLogger } from './utils/logger';
+import { initializeSentry, captureException, addBreadcrumb } from './utils/sentryHelper';
 
 declare module 'discord.js' {
   interface Client {
@@ -24,6 +25,9 @@ async function main(): Promise<void> {
   try {
     const config = loadConfig();
     const logger = getLogger();
+
+    // Initialize Sentry for error tracking (if DSN provided)
+    initializeSentry(config.sentry?.dsn);
 
     logger.info('Starting PPTB Discord Assistant', {
       nodeEnv: config.nodeEnv,
@@ -47,7 +51,7 @@ async function main(): Promise<void> {
 
       for (const file of commandFiles) {
         const filePath = join(folderPath, file);
-        const commandModule = require(filePath) as Record<string, BotCommand>;
+        const commandModule = (await import(filePath)) as unknown as Record<string, BotCommand>;
         const command = Object.values(commandModule)[0];
 
         if (command && 'data' in command && 'execute' in command) {
@@ -65,7 +69,7 @@ async function main(): Promise<void> {
 
     for (const file of eventFiles) {
       const filePath = join(eventsPath, file);
-      const eventModule = require(filePath) as Record<string, BotEvent>;
+      const eventModule = (await import(filePath)) as Record<string, BotEvent>;
       const event = Object.values(eventModule)[0];
 
       if (event && 'name' in event && 'execute' in event) {
@@ -81,10 +85,7 @@ async function main(): Promise<void> {
     }
 
     // Setup webhook handlers
-    const webhookHandlers = new Map<
-      string,
-      (payload: GitHubWebhookPayload) => Promise<void>
-    >();
+    const webhookHandlers = new Map<string, (payload: GitHubWebhookPayload) => Promise<void>>();
 
     // Handle issues (for project items)
     webhookHandlers.set('issues', async (payload) => {
@@ -105,7 +106,7 @@ async function main(): Promise<void> {
     const webhookServer = createWebhookServer(webhookHandlers);
     webhookServer.setDiscordClient(client);
 
-        // Start webhook server immediately (before Discord login)
+    // Start webhook server immediately (before Discord login)
     // This allows Railway to health check the server
     webhookServer.start();
 
@@ -115,6 +116,8 @@ async function main(): Promise<void> {
         error: error.message,
         stack: error.stack,
       });
+      captureException(error, { type: 'unhandledRejection' });
+      addBreadcrumb('Unhandled rejection', 'error');
     });
 
     process.on('uncaughtException', (error: Error) => {
@@ -122,14 +125,13 @@ async function main(): Promise<void> {
         error: error.message,
         stack: error.stack,
       });
+      captureException(error, { type: 'uncaughtException' });
+      addBreadcrumb('Uncaught exception', 'error');
       process.exit(1);
     });
 
     // Login to Discord
     await client.login(config.discord.token);
-
-106
-                   
     // Cleanup on exit
     process.on('SIGINT', () => {
       logger.info('Shutting down...');
@@ -143,6 +145,7 @@ async function main(): Promise<void> {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
+    captureException(error, { stage: 'startup' });
     process.exit(1);
   }
 }

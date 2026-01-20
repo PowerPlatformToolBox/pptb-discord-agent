@@ -3,8 +3,8 @@
  */
 
 import { getConfig } from '../../config/config';
-import { getLogger } from '../../utils/logger';
 import { GitHubAPIError } from '../../types/errors';
+import { getLogger } from '../../utils/logger';
 
 interface GitHubAPIOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -20,7 +20,7 @@ export class GitHubClient {
   private readonly token: string;
   private readonly org: string;
   private readonly baseURL = 'https://api.github.com';
-  private readonly logger = getLogger();
+  private readonly logger = getLogger('GitHubClient');
 
   constructor() {
     const config = getConfig();
@@ -36,16 +36,13 @@ export class GitHubClient {
   /**
    * Make authenticated request to GitHub API
    */
-  public async request<T>(
-    endpoint: string,
-    options: GitHubAPIOptions = {}
-  ): Promise<T> {
+  public async request<T>(endpoint: string, options: GitHubAPIOptions = {}): Promise<T> {
     const { method = 'GET', body } = options;
 
     const url = `${this.baseURL}${endpoint}`;
     const headers: Record<string, string> = {
-      'Authorization': `Bearer ${this.token}`,
-      'Accept': 'application/vnd.github+json',
+      Authorization: `Bearer ${this.token}`,
+      Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       'User-Agent': 'pptb-discord-assistant',
     };
@@ -74,8 +71,10 @@ export class GitHubClient {
 
         this.logger.error('GitHub API request failed', {
           endpoint,
+          method,
           status: response.status,
-          error: errorData,
+          error: errorData.message,
+          documentationUrl: errorData.documentation_url,
         });
 
         throw new GitHubAPIError(
@@ -97,7 +96,9 @@ export class GitHubClient {
 
       this.logger.error('GitHub API request error', {
         endpoint,
+        method,
         error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       });
 
       throw new GitHubAPIError('Failed to make GitHub API request', {
@@ -110,10 +111,14 @@ export class GitHubClient {
   public async testConnection(): Promise<boolean> {
     try {
       await this.request('/user');
-      this.logger.info('GitHub API connection test successful');
+      this.logger.info('GitHub API connection test successful', { org: this.org });
       return true;
     } catch (error) {
-      this.logger.error('GitHub API connection test failed', { error });
+      this.logger.error('GitHub API connection test failed', {
+        org: this.org,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new GitHubAPIError('Failed to connect to GitHub API', { error });
     }
   }

@@ -3,8 +3,8 @@
  */
 
 import { Events, type Client } from 'discord.js';
-import { getLogger } from '../../utils/logger';
 import type { ReadyEvent } from '../../types';
+import { getLogger } from '../../utils/logger';
 
 export const readyEvent: ReadyEvent = {
   name: Events.ClientReady,

@@ -10,8 +10,14 @@ const webhookConfigSchema = z.object({
   secret: z.string().optional(),
   projectThreadChannel: z.string(),
   releaseAnnouncementChannel: z.string(),
-  watchedRepositories: z.string().transform((val) => val.split(',')).default('pptb-mockaroo-munger'),
-  watchedLabels: z.string().transform((val) => val.split(',')).default('DiscordDiscussion'),
+  watchedRepositories: z
+    .string()
+    .transform((val) => val.split(','))
+    .default('pptb-mockaroo-munger'),
+  watchedLabels: z
+    .string()
+    .transform((val) => val.split(','))
+    .default('DiscordDiscussion'),
 });
 
 export type WebhookConfig = z.infer<typeof webhookConfigSchema>;

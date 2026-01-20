@@ -2,8 +2,8 @@
  * Discord embed builders for consistent message formatting
  */
 
-import { EmbedBuilder } from 'discord.js';
 import type { Message, MessageReaction, User } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { CONSTANTS } from '../config/constants';
 import type { GitHubIssue } from '../types';
 
@@ -16,7 +16,7 @@ export function createMessageLogEmbed(
   user: User
 ): EmbedBuilder {
   const embed = new EmbedBuilder()
-    .setTitle('⭐ Message Logged')
+    .setTitle('📝 Message Logged')
     .setColor(CONSTANTS.DISCORD_COLORS.PRIMARY)
     .setDescription(message.content || '*No text content*')
     .addFields(

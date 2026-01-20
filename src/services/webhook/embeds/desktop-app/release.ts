@@ -8,9 +8,7 @@ import { DISCORD_COLORS } from '../../../../constants/discord';
 /**
  * Creates a release announcement embed for desktop-app
  */
-export function createDesktopAppReleaseEmbed(
-  params: ReleaseEmbedParams
-): EmbedFactoryResult {
+export function createDesktopAppReleaseEmbed(params: ReleaseEmbedParams): EmbedFactoryResult {
   const { release, payload } = params;
 
   // Format description (trim to Discord's 4096 char limit)
@@ -25,13 +23,11 @@ export function createDesktopAppReleaseEmbed(
     .setURL(release.html_url)
     .setDescription(description)
     .setColor(DISCORD_COLORS.BLURPLE)
-    .addFields(
-      { name: '📦 Version', value: release.tag_name, inline: true }
-    )
+    .addFields({ name: '📦 Version', value: release.tag_name, inline: true })
     .setTimestamp(new Date(release.published_at))
     .setFooter({
       text: `${payload.repository.name} • ${release.prerelease ? 'Pre-release' : 'Stable Release'}`,
-      iconURL: payload.repository.owner?.avatar_url
+      iconURL: payload.repository.owner?.avatar_url,
     });
 
   // Build meta details
@@ -47,7 +43,7 @@ export function createDesktopAppReleaseEmbed(
     embed.addFields({
       name: 'ℹ️ Details',
       value: metaLines.join('\n'),
-      inline: false
+      inline: false,
     });
   }
 
@@ -55,11 +51,11 @@ export function createDesktopAppReleaseEmbed(
   embed.addFields({
     name: '🔗 Links',
     value: `[View Release](${release.html_url}) • [Source Code](${release.zipball_url})`,
-    inline: false
+    inline: false,
   });
 
   return {
     embed,
-    content: '🎉 **New release available!**'
+    content: '🎉 **New release available!**',
   };
 }

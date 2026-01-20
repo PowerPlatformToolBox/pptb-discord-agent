@@ -1,16 +1,9 @@
 # Railway Deployment Guide
 
-## Overview
-
-Railway provides $5 free credits monthly - perfect for low-usage Discord bots!
-
-**Railway uses Railpack** (their modern build system) which automatically detects pnpm from `package.json`.
-
 ## Prerequisites
 
-- GitHub account with `pptb-discord-assistant` repository
 - Railway account (sign up with GitHub)
-- All Discord/GitHub tokens ready
+- .env created with tokens ready
 
 ---
 
@@ -26,12 +19,13 @@ Railway provides $5 free credits monthly - perfect for low-usage Discord bots!
 
 1. Click **"New Project"**
 2. Select **"Deploy from GitHub repo"**
-3. Choose repository: `MattBerg11/pptb-discord-assistant`
+3. Choose repository
 4. Click **"Deploy Now"**
 
 Railway will automatically:
+
 - Detect `packageManager` field in package.json
-- Install pnpm 9.14.4
+- Install pnpm
 - Run `pnpm install`
 - Run `pnpm build` (from scripts)
 - Start with `pnpm start`
@@ -42,26 +36,16 @@ Railway will automatically:
 
 1. Click on your service ("pptb-discord-assistant")
 2. Go to **"Variables"** tab
-3. Click **"New Variable"** for each:
+3. Go to **Raw Editor**
+4. Paste the configured .env into the editor
 
 ### Required Variables
 
-```bash
-DISCORD_BOT_TOKEN=your_discord_bot_token
-DISCORD_CLIENT_ID=your_client_id
-DISCORD_GUILD_ID=your_server_id
-GITHUB_TOKEN=your_github_token
-GITHUB_ORG=PowerPlatformToolBox
-LOG_CHANNEL_ID=your_log_channel_id
-REACTION_EMOJI=⭐
-WEBHOOK_PORT=3000
-WEBHOOK_SECRET=your_generated_secret
-PROJECT_THREAD_CHANNEL_ID=your_thread_channel_id
-RELEASE_CHANNEL_ID=your_release_channel_id
-PROJECT_DISCUSSION_LABEL=DiscordDiscussion
-NODE_ENV=production
-LOG_LEVEL=info
-```
+**Important production adjustments:**
+
+- Set `NODE_ENV=production`
+- Set `LOG_LEVEL=info` (not `debug`)
+- Generate a secure `WEBHOOK_SECRET` (see below)
 
 ### Generate WEBHOOK_SECRET
 
@@ -92,6 +76,7 @@ Railway reads `package.json` and sees:
 ```
 
 This tells Railway:
+
 - Use Node.js 18+
 - Use pnpm 9.14.4 specifically
 - Install dependencies with pnpm
@@ -107,6 +92,7 @@ This tells Railway:
 3. Check **"Deployments"** tab for progress
 
 **Build logs should show:**
+
 ```
 ✓ Detected pnpm from packageManager field
 ✓ Installing pnpm@9.14.4
@@ -133,6 +119,7 @@ This tells Railway:
 2. Click **"Add webhook"**
 
 **Configure:**
+
 - **Payload URL:** `https://your-railway-app.up.railway.app`
 - **Content type:** `application/json`
 - **Secret:** Your `WEBHOOK_SECRET` from environment variables
@@ -143,69 +130,12 @@ This tells Railway:
 
 ---
 
-## Step 8: Test Everything
-
-### Test Discord Bot
-
-```
-Type /ping in your Discord server
-Bot should respond with latency
-```
-
-### Test Discussion Thread
-
-1. Create issue in `desktop-app` repository
-2. Add label: `DiscordDiscussion`
-3. Check Discord - thread should appear!
-
-### Test Release Announcement
-
-1. Publish a release in `desktop-app`
-2. Make sure it's NOT draft or pre-release
-3. Check Discord - announcement should appear!
-
-### Check Logs
-
-In Railway:
-1. Go to **"Deployments"**
-2. Click latest deployment
-3. Click **"View Logs"**
-
-You should see:
-```
-Bot logged in {"username":"...","id":"...","guilds":1}
-Webhook server started {"port":3000}
-Bot is ready and online
-```
-
----
-
-## Auto-Deploy Configuration
-
-**Already active!** Every push to `main` will:
-
-1. Trigger automatic build on Railway
-2. Run `pnpm install`
-3. Run `pnpm build`
-4. Deploy new version
-5. Zero downtime deployment
-
-**To deploy:**
-```bash
-git add .
-git commit -m "feat: add feature"
-git push origin main
-```
-
-Railway automatically deploys in ~2-3 minutes.
-
----
-
 ## How Railway Detects pnpm
 
 Railway's Railpack system checks in order:
 
 1. **`packageManager` field** in package.json (recommended)
+
    ```json
    "packageManager": "pnpm@9.14.4"
    ```
@@ -241,6 +171,7 @@ Your project uses **all three** for maximum compatibility!
 2. Select **"Restart"**
 
 Or force redeploy:
+
 1. Settings → **"Redeploy"**
 
 ### Update Environment Variables
@@ -254,17 +185,20 @@ Or force redeploy:
 ## Cost & Free Tier
 
 **Railway Free Tier:**
+
 - $5 in credits per month
 - 500 execution hours
 - 1GB RAM
 - 1GB disk
 
 **Your Bot Usage:**
+
 - Running 24/7 = 720 hours/month
 - Typical usage: ~$0.15-0.30/month
 - **Well within free tier!** ✅
 
 **Cost breakdown:**
+
 - Execution: ~$0.0002/hour
 - Memory: Included
 - Network: Included (within limits)
@@ -277,17 +211,20 @@ Or force redeploy:
 
 **Solution 1: Check package.json**
 Ensure these fields exist:
+
 ```json
 {
-  "packageManager": "pnpm@9.14.4",
+  "packageManager": "pnpm@10.18.3",
   "engines": {
     "pnpm": ">=8.0.0"
   }
 }
 ```
+```
 
 **Solution 2: Check pnpm-lock.yaml**
 Ensure `pnpm-lock.yaml` is committed to repository:
+
 ```bash
 git add pnpm-lock.yaml
 git commit -m "Add pnpm lockfile"
@@ -296,6 +233,7 @@ git push
 
 **Solution 3: Manual Settings Override**
 In Railway Settings → Build:
+
 - Install Command: `pnpm install`
 - Build Command: `pnpm build`
 - Start Command: `pnpm start`
@@ -303,15 +241,18 @@ In Railway Settings → Build:
 ### Build Failing
 
 **Check deployment logs:**
+
 1. Deployments → Click failed build
 2. Read error messages
 
 **Common issues:**
+
 - Missing environment variables
 - TypeScript compilation errors
 - Missing pnpm-lock.yaml
 
 **Solutions:**
+
 - Verify all environment variables are set
 - Run `pnpm build` locally to test
 - Ensure lockfile is committed
@@ -319,11 +260,13 @@ In Railway Settings → Build:
 ### Bot Not Responding in Discord
 
 **Check runtime logs:**
+
 ```
 Should see: "Bot logged in"
 ```
 
 **Verify:**
+
 - `DISCORD_BOT_TOKEN` is correct
 - `DISCORD_CLIENT_ID` is correct
 - Bot has proper Discord permissions
@@ -331,16 +274,19 @@ Should see: "Bot logged in"
 ### Webhooks Not Working
 
 **Check GitHub webhook deliveries:**
+
 1. GitHub → Settings → Webhooks
 2. Click webhook → Recent Deliveries
 3. Look for errors (401, 500, etc.)
 
 **Check Railway logs:**
+
 ```
 Should see: "Webhook received"
 ```
 
 **Verify:**
+
 - `WEBHOOK_SECRET` matches GitHub webhook secret
 - Railway URL is correct in GitHub webhook
 - Port 3000 is exposed
@@ -393,6 +339,7 @@ git push origin main
 ## Why This Works
 
 Railway's **Railpack** (modern build system):
+
 - ✅ Automatically detects `packageManager` field
 - ✅ Respects `engines` specifications
 - ✅ No deprecated nixpacks needed
@@ -406,11 +353,13 @@ Railway's **Railpack** (modern build system):
 ## Support
 
 **Railway Support:**
+
 - Docs: docs.railway.app
 - Discord: discord.gg/railway
 - Help: help.railway.app
 
 **Bot Issues:**
+
 1. Check Railway logs first
 2. Verify environment variables
 3. Test locally with same `.env`
@@ -421,6 +370,7 @@ Railway's **Railpack** (modern build system):
 ## Summary
 
 Railway is perfect for this Discord bot:
+
 - ✅ 100% free for your usage
 - ✅ Auto-detects pnpm from package.json
 - ✅ No deprecated nixpacks needed

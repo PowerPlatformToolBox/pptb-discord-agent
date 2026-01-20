@@ -3,10 +3,10 @@
  */
 
 import { ChannelType, type Client, EmbedBuilder } from 'discord.js';
-import { getLogger } from '../../../utils/logger';
-import { loadWebhookConfig } from '../../../config/webhook';
 import { CONSTANTS } from '../../../config/constants';
+import { loadWebhookConfig } from '../../../config/webhook';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
+import { getLogger } from '../../../utils/logger';
 
 export async function handleProjectItem(
   payload: GitHubWebhookPayload,
@@ -22,9 +22,7 @@ export async function handleProjectItem(
 
   // Check if issue/PR has any watched labels
   const labels = payload.issue?.labels || [];
-  const hasWatchedLabel = labels.some((label) =>
-    config.watchedLabels.includes(label.name)
-  );
+  const hasWatchedLabel = labels.some((label) => config.watchedLabels.includes(label.name));
 
   if (!hasWatchedLabel) {
     logger.debug('No watched labels found', {
@@ -35,9 +33,7 @@ export async function handleProjectItem(
   }
 
   // Identify which label triggered this
-  const triggeringLabel = labels.find((label) =>
-    config.watchedLabels.includes(label.name)
-  );
+  const triggeringLabel = labels.find((label) => config.watchedLabels.includes(label.name));
 
   if (!triggeringLabel) {
     return;
