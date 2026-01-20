@@ -5,7 +5,7 @@ import {
   //createDevReleaseEmbed,
   //createMainReleaseEmbed,
   detectReleaseType,
-  parseReleaseBody,
+  //parseReleaseBody,
 } from './releaseWebhook';
 import { SponsorWebhookPayload, createSponsorEmbed } from './sponsorWebhook';
 
