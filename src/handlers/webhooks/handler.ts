@@ -2,8 +2,8 @@ import { Client, TextChannel } from 'discord.js';
 import { getLogger } from '../../utils/logger';
 import {
   ReleaseWebhookPayload,
-  createDevReleaseEmbed,
-  createMainReleaseEmbed,
+  //createDevReleaseEmbed,
+  //createMainReleaseEmbed,
   detectReleaseType,
   parseReleaseBody,
 } from './releaseWebhook';
@@ -48,18 +48,40 @@ export class GitHubWebhookHandler {
       // Parse release body
       const releaseBody = parseReleaseBody(payload.release.body || '');
 
-      // Create appropriate embed
-      const embed = releaseType.isDevRelease
-        ? createDevReleaseEmbed(payload, releaseBody)
-        : createMainReleaseEmbed(payload, releaseBody);
+      // TEMP: Testing plain text message instead of embed
+      const header = releaseType.isDevRelease
+        ? `🔬 **Development Release**: ${payload.release.tag_name}`
+        : `🚀 **New Release**: ${payload.release.tag_name}`;
 
-      // Send message
-      await channel.send({
-        embeds: [embed],
-        content: releaseType.isDevRelease
-          ? `🔬 **Development Release**: ${payload.release.tag_name}`
-          : `🚀 **New Release**: ${payload.release.tag_name}`,
-      });
+      const highlights = releaseBody.highlights.length > 0
+        ? `\n**✨ Highlights:**\n${releaseBody.highlights.slice(0, 5).join('\n')}`
+        : '';
+
+      const fixes = releaseBody.fixes.length > 0
+        ? `\n**🐛 Fixes:**\n${releaseBody.fixes.slice(0, 4).join('\n')}`
+        : '';
+
+      const devNotes = releaseBody.developer.length > 0
+        ? `\n**⚙️ Developer & Build:**\n${releaseBody.developer.slice(0, 3).join('\n')}`
+        : '';
+
+      const assets = payload.release.assets.length > 0
+        ? `\n**📥 Downloads:**\n${payload.release.assets
+          .slice(0, 3)
+          .map((asset) => `[${asset.name}](${asset.browser_download_url})`)
+          .join(' • ')}`
+        : '';
+
+      const notes = releaseBody.notes.length > 0
+        ? `\n**📋 Notes:**\n${releaseBody.notes.join('\n')}`
+        : '';
+
+      const footer = `\n🔗 [View on GitHub](${payload.release.html_url})`;
+
+      const message = `${header}${highlights}${fixes}${devNotes}${assets}${notes}${footer}`;
+
+      // Send as plain text message
+      await channel.send(message);
 
       logger.info(
         `Release webhook processed: ${payload.release.tag_name} (type: ${releaseType.releaseType})`
