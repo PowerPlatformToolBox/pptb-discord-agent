@@ -5,7 +5,6 @@ import {
   //createDevReleaseEmbed,
   //createMainReleaseEmbed,
   detectReleaseType,
-  //parseReleaseBody,
 } from './releaseWebhook';
 import { SponsorWebhookPayload, createSponsorEmbed } from './sponsorWebhook';
 
@@ -28,6 +27,11 @@ export class GitHubWebhookHandler {
 
   async handleReleaseWebhook(payload: ReleaseWebhookPayload): Promise<void> {
     try {
+      logger.info('Release webhook received', {
+        action: payload.action,
+        tag: payload.release.tag_name,
+      });
+
       // Only process published/created releases
       if (!['published', 'created', 'released'].includes(payload.action)) {
         logger.debug(`Skipping release action: ${payload.action}`);
@@ -39,11 +43,18 @@ export class GitHubWebhookHandler {
         ? this.config.devReleaseChannelId || this.config.releaseChannelId
         : this.config.releaseChannelId;
 
+      logger.info('Fetching release channel', {
+        channelId,
+        isDevRelease: releaseType.isDevRelease,
+      });
+
       const channel = (await this.client.channels.fetch(channelId)) as TextChannel;
       if (!channel) {
         logger.error(`Release channel ${channelId} not found`);
         return;
       }
+
+      logger.info('Channel fetched successfully', { channelId, channelName: channel.name });
 
       // TEMP: Using GitHub release body directly as markdown message
       const header = releaseType.isDevRelease
@@ -51,6 +62,8 @@ export class GitHubWebhookHandler {
         : `🚀 **New Release**: ${payload.release.tag_name}`;
 
       const message = `${header}\n\n${payload.release.body || 'No release notes available.'}`;
+
+      logger.info('Sending message', { messageLength: message.length, channelId });
 
       // Send as plain text message
       await channel.send(message);
@@ -61,6 +74,7 @@ export class GitHubWebhookHandler {
     } catch (error) {
       logger.error('Error handling release webhook', {
         error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
         release: payload.release.tag_name,
       });
       throw error;

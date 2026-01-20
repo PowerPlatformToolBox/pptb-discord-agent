@@ -12,8 +12,18 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
   const logger = getLogger();
   const config = loadWebhookConfig();
 
+  logger.info('handleRelease called', {
+    action: payload.action,
+    hasRelease: !!payload.release,
+    repo: payload.repository?.name,
+  });
+
   // Only handle published releases (not drafts or pre-releases)
   if (payload.action !== 'published' || !payload.release) {
+    logger.info('Skipping release', {
+      action: payload.action,
+      hasRelease: !!payload.release,
+    });
     return;
   }
 

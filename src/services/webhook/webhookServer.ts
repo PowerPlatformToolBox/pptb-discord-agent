@@ -88,7 +88,18 @@ export class WebhookServer {
 
         const handler = this.handlers.get(event);
         if (handler) {
-          await handler(payload);
+          this.logger.info('Calling handler', { event, handler: handler.name || 'anonymous' });
+          try {
+            await handler(payload);
+            this.logger.info('Handler executed successfully', { event });
+          } catch (handlerError) {
+            this.logger.error('Handler threw error', {
+              event,
+              error: handlerError instanceof Error ? handlerError.message : String(handlerError),
+              stack: handlerError instanceof Error ? handlerError.stack : undefined,
+            });
+            throw handlerError;
+          }
         } else {
           this.logger.debug('No handler for event', { event });
         }
