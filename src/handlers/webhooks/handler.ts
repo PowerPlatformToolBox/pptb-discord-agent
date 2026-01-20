@@ -45,40 +45,12 @@ export class GitHubWebhookHandler {
         return;
       }
 
-      // Parse release body
-      const releaseBody = parseReleaseBody(payload.release.body || '');
-
-      // TEMP: Testing plain text message instead of embed
+      // TEMP: Using GitHub release body directly as markdown message
       const header = releaseType.isDevRelease
         ? `🔬 **Development Release**: ${payload.release.tag_name}`
         : `🚀 **New Release**: ${payload.release.tag_name}`;
 
-      const highlights = releaseBody.highlights.length > 0
-        ? `\n**✨ Highlights:**\n${releaseBody.highlights.slice(0, 5).join('\n')}`
-        : '';
-
-      const fixes = releaseBody.fixes.length > 0
-        ? `\n**🐛 Fixes:**\n${releaseBody.fixes.slice(0, 4).join('\n')}`
-        : '';
-
-      const devNotes = releaseBody.developer.length > 0
-        ? `\n**⚙️ Developer & Build:**\n${releaseBody.developer.slice(0, 3).join('\n')}`
-        : '';
-
-      const assets = payload.release.assets.length > 0
-        ? `\n**📥 Downloads:**\n${payload.release.assets
-          .slice(0, 3)
-          .map((asset) => `[${asset.name}](${asset.browser_download_url})`)
-          .join(' • ')}`
-        : '';
-
-      const notes = releaseBody.notes.length > 0
-        ? `\n**📋 Notes:**\n${releaseBody.notes.join('\n')}`
-        : '';
-
-      const footer = `\n🔗 [View on GitHub](${payload.release.html_url})`;
-
-      const message = `${header}${highlights}${fixes}${devNotes}${assets}${notes}${footer}`;
+      const message = `${header}\n\n${payload.release.body || 'No release notes available.'}`;
 
       // Send as plain text message
       await channel.send(message);
