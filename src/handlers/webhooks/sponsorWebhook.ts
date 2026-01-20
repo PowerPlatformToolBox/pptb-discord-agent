@@ -32,6 +32,14 @@ export interface SponsorWebhookPayload {
     privacy_level: 'public' | 'private';
     monthly_price_in_cents: number;
   };
+  changes?: {
+    tier?: {
+      from?: {
+        monthly_price_in_cents?: number;
+        name?: string;
+      };
+    };
+  };
   sender: {
     login: string;
     id: number;
@@ -45,7 +53,7 @@ export function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export function createSponsorEmbed(payload: SponsorWebhookPayload): EmbedBuilder {
+export function createSponsorEmbed(payload: SponsorWebhookPayload): EmbedBuilder | null {
   const isPrivate = payload.sponsorship.privacy_level === 'private';
   const sponsorName = isPrivate ? 'Anonymous Sponsor' : payload.sponsorship.sponsor.login;
   const sponsorAvatar = isPrivate ? undefined : payload.sponsorship.sponsor.avatar_url;
@@ -82,26 +90,25 @@ export function createSponsorEmbed(payload: SponsorWebhookPayload): EmbedBuilder
     }
 
     case 'cancelled': {
-      const wasAmount = formatCurrency(payload.sponsorship.monthly_price_in_cents);
-      embed
-        .setTitle('👋 Sponsorship Ended')
-        .setDescription(`**${sponsorName}** has cancelled their sponsorship.`)
-        .addFields({ name: 'Previous Support', value: `${wasAmount}/month`, inline: true })
-        .setColor(0x666666);
-
-      if (sponsorAvatar && !isPrivate) {
-        embed.setThumbnail(sponsorAvatar);
-      }
-      break;
+      // Do not notify on cancellations
+      return null;
     }
 
     case 'tier_changed': {
       const newAmount = formatCurrency(payload.sponsorship.monthly_price_in_cents);
       const tierName = payload.sponsorship.tier.name;
+      const previousAmountCents = payload.changes?.tier?.from?.monthly_price_in_cents;
+      if (
+        typeof previousAmountCents === 'number' &&
+        payload.sponsorship.monthly_price_in_cents <= previousAmountCents
+      ) {
+        // Suppress notifications for downgrades or equal tiers
+        return null;
+      }
 
       embed
-        .setTitle('📈 Sponsorship Tier Updated')
-        .setDescription(`**${sponsorName}** has updated their sponsorship tier.`)
+        .setTitle('📈 Sponsorship Tier Upgraded')
+        .setDescription(`**${sponsorName}** increased their sponsorship tier.`)
         .addFields(
           { name: 'New Tier', value: tierName, inline: true },
           { name: 'New Amount', value: `${newAmount}/month`, inline: true }
@@ -116,9 +123,18 @@ export function createSponsorEmbed(payload: SponsorWebhookPayload): EmbedBuilder
 
     case 'edited': {
       const amount = formatCurrency(payload.sponsorship.monthly_price_in_cents);
+      const previousAmountCents = payload.changes?.tier?.from?.monthly_price_in_cents;
+      if (
+        typeof previousAmountCents === 'number' &&
+        payload.sponsorship.monthly_price_in_cents <= previousAmountCents
+      ) {
+        // Suppress notifications for downgrades or equal updates
+        return null;
+      }
+
       embed
-        .setTitle('✏️ Sponsorship Updated')
-        .setDescription(`**${sponsorName}**'s sponsorship was updated.`)
+        .setTitle('✏️ Sponsorship Updated (Upgrade)')
+        .setDescription(`**${sponsorName}** increased their sponsorship.`)
         .addFields(
           { name: 'Tier', value: payload.sponsorship.tier.name, inline: true },
           { name: 'Amount', value: `${amount}/month`, inline: true }

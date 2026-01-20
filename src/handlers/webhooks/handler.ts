@@ -84,6 +84,13 @@ export class GitHubWebhookHandler {
       }
 
       const embed = createSponsorEmbed(payload);
+      if (!embed) {
+        logger.info('Sponsor webhook skipped', {
+          action: payload.action,
+          sponsor: payload.sponsorship.sponsor.login,
+        });
+        return;
+      }
 
       // Add sponsor URL if public
       if (payload.sponsorship.privacy_level === 'public') {
@@ -119,13 +126,14 @@ export class GitHubWebhookHandler {
         logger.error(`Channel ${channelId} not found`);
         return;
       }
+      // Log payload for debugging
+      logger.debug('Custom webhook payload received', { eventType, payload });
 
-      // Implement custom webhook logic here
+      // Implement custom webhook logic here (placeholder)
       await channel.send({
         content: `📦 Custom event: ${eventType}`,
       });
-
-      logger.info(`Custom webhook processed: ${eventType}`);
+      logger.info(`Custom webhook processed: ${eventType}`, { payloadKeys: Object.keys(payload) });
     } catch (error) {
       logger.error('Error handling custom webhook', {
         error: error instanceof Error ? error.message : String(error),

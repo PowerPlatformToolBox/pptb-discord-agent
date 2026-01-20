@@ -61,6 +61,11 @@ export interface DevReleaseConfig {
   releaseType: 'major' | 'minor' | 'patch' | 'dev';
 }
 
+// Discord embed field value limit: 1024 characters
+function truncateField(text: string): string {
+  return text.length > 1024 ? `${text.substring(0, 1020)}...` : text;
+}
+
 export function parseReleaseBody(body: string): {
   highlights: string[];
   fixes: string[];
@@ -133,7 +138,7 @@ export function createMainReleaseEmbed(
     const highlightsText = releaseBody.highlights.slice(0, 5).join('\n');
     embed.addFields({
       name: '✨ Highlights',
-      value: highlightsText || 'No highlights',
+      value: truncateField(highlightsText) || 'No highlights',
       inline: false,
     });
   }
@@ -143,7 +148,7 @@ export function createMainReleaseEmbed(
     const fixesText = releaseBody.fixes.slice(0, 4).join('\n');
     embed.addFields({
       name: '🐛 Fixes',
-      value: fixesText || 'No fixes',
+      value: truncateField(fixesText) || 'No fixes',
       inline: false,
     });
   }
@@ -153,7 +158,7 @@ export function createMainReleaseEmbed(
     const devText = releaseBody.developer.slice(0, 3).join('\n');
     embed.addFields({
       name: '⚙️ Developer & Build',
-      value: devText || 'No dev notes',
+      value: truncateField(devText) || 'No dev notes',
       inline: false,
     });
   }
@@ -166,7 +171,7 @@ export function createMainReleaseEmbed(
       .join(' • ');
     embed.addFields({
       name: '📥 Downloads',
-      value: assetLinks || 'View on GitHub',
+      value: truncateField(assetLinks) || 'View on GitHub',
       inline: false,
     });
   }
@@ -176,7 +181,7 @@ export function createMainReleaseEmbed(
     const notesText = releaseBody.notes.join('\n');
     embed.addFields({
       name: '📋 Notes',
-      value: notesText || 'No notes',
+      value: truncateField(notesText) || 'No notes',
       inline: false,
     });
   }
@@ -217,7 +222,7 @@ export function createDevReleaseEmbed(
     const highlightsText = releaseBody.highlights.slice(0, 5).join('\n');
     embed.addFields({
       name: '✨ Changes',
-      value: highlightsText || 'No highlights',
+      value: truncateField(highlightsText) || 'No highlights',
       inline: false,
     });
   }
@@ -227,7 +232,7 @@ export function createDevReleaseEmbed(
     const devText = releaseBody.developer.join('\n');
     embed.addFields({
       name: '⚙️ Technical Details',
-      value: devText || 'No dev notes',
+      value: truncateField(devText) || 'No dev notes',
       inline: false,
     });
   }
@@ -237,7 +242,7 @@ export function createDevReleaseEmbed(
     const fixesText = releaseBody.fixes.slice(0, 3).join('\n');
     embed.addFields({
       name: '🐛 Known Fixes',
-      value: fixesText || 'No fixes',
+      value: truncateField(fixesText) || 'No fixes',
       inline: false,
     });
   }
