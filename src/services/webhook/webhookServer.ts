@@ -24,7 +24,15 @@ export class WebhookServer {
   }
 
   public start(): void {
-    this.server = createServer((req, res) => void this.handleRequest(req, res));
+    this.server = createServer((req, res) => {
+      // Set request timeout to 30 seconds
+      req.setTimeout(30000, () => {
+        this.logger.warn('Request timeout', { url: req.url });
+        res.writeHead(408, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request timeout' }));
+      });
+      void this.handleRequest(req, res);
+    });
 
     this.server.listen(this.config.port, () => {
       this.logger.info('Webhook server started', { port: this.config.port });
@@ -59,8 +67,20 @@ export class WebhookServer {
       return;
     }
 
+    // Request body size limit (10MB for GitHub webhooks)
+    const MAX_BODY_SIZE = 10 * 1024 * 1024;
     let body = '';
+    let bodySize = 0;
+
     req.on('data', (chunk) => {
+      bodySize += chunk.length;
+      if (bodySize > MAX_BODY_SIZE) {
+        this.logger.warn('Request body too large', { size: bodySize });
+        req.destroy();
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request body too large' }));
+        return;
+      }
       body += chunk.toString();
     });
 

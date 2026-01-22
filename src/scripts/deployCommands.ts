@@ -3,7 +3,7 @@
  */
 
 import { REST, Routes } from 'discord.js';
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from '../config/config';
 import type { BotCommand } from '../types';
@@ -21,11 +21,11 @@ async function deployCommands(): Promise<void> {
 
     logger.info('Loading commands from', { path: commandsPath });
 
-    const commandFolders = readdirSync(commandsPath);
+    const commandFolders = await readdir(commandsPath);
 
     for (const folder of commandFolders) {
       const folderPath = join(commandsPath, folder);
-      const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+      const commandFiles = (await readdir(folderPath)).filter((file) => file.endsWith('.js'));
 
       logger.info('Scanning folder', { folder, files: commandFiles.length });
 

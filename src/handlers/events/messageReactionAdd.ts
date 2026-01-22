@@ -5,6 +5,7 @@
 import { ChannelType, Events, type MessageReaction, type TextChannel, type User } from 'discord.js';
 import { getConfig } from '../../config/config';
 import type { MessageReactionAddEvent } from '../../types';
+import { getChannelCache } from '../../utils/channelCache';
 import { createErrorEmbed, createMessageLogEmbed } from '../../utils/embedBuilder';
 import { getLogger } from '../../utils/logger';
 
@@ -47,7 +48,8 @@ export const messageReactionAddEvent: MessageReactionAddEvent = {
         return;
       }
 
-      const logChannel = await message.guild.channels.fetch(config.logging.channelId);
+      const channelCache = getChannelCache();
+      const logChannel = await channelCache.fetch(message.client, config.logging.channelId);
       if (!logChannel) {
         logger.error('Log channel not found', { channelId: config.logging.channelId });
         return;
