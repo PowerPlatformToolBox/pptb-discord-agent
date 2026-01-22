@@ -7,6 +7,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { loadWebhookConfig } from '../../config/webhook';
 import type { GitHubWebhookPayload } from '../../types/webhook';
+import { createErrorLogObject } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
 
 export class WebhookServer {
@@ -115,8 +116,7 @@ export class WebhookServer {
           } catch (handlerError) {
             this.logger.error('Handler threw error', {
               event,
-              error: handlerError instanceof Error ? handlerError.message : String(handlerError),
-              stack: handlerError instanceof Error ? handlerError.stack : undefined,
+              ...createErrorLogObject(handlerError),
             });
             throw handlerError;
           }
@@ -128,7 +128,7 @@ export class WebhookServer {
         res.end(JSON.stringify({ success: true }));
       } catch (error) {
         this.logger.error('Webhook processing error', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          ...createErrorLogObject(error),
         });
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Internal server error' }));

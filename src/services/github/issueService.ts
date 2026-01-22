@@ -10,6 +10,7 @@ import type {
   GitHubServiceResult,
 } from '../../types';
 import { GitHubAPIError } from '../../types/errors';
+import { getErrorMessage } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
 import { sanitizeIssueInput, validateLabels, validateRepoName } from '../../utils/validators';
 import { getGitHubClient } from './githubClient';
@@ -60,13 +61,13 @@ export class GitHubIssueService {
       };
     } catch (error) {
       this.logger.error('Failed to create GitHub issue', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
         repo: params.repo,
         owner: params.owner,
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }
@@ -97,11 +98,11 @@ export class GitHubIssueService {
       };
     } catch (error) {
       this.logger.error('Failed to list repositories', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }
@@ -121,13 +122,13 @@ export class GitHubIssueService {
       };
     } catch (error) {
       this.logger.error('Failed to get issue', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
         repo,
         issueNumber,
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }
@@ -161,13 +162,13 @@ export class GitHubIssueService {
       };
     } catch (error) {
       this.logger.error('Failed to add comment', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
         repo,
         issueNumber,
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: getErrorMessage(error),
       };
     }
   }

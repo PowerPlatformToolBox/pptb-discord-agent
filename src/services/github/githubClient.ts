@@ -4,6 +4,7 @@
 
 import { getConfig } from '../../config/config';
 import { GitHubAPIError } from '../../types/errors';
+import { createErrorLogObject } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
 
 interface GitHubAPIOptions {
@@ -97,8 +98,7 @@ export class GitHubClient {
       this.logger.error('GitHub API request error', {
         endpoint,
         method,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
+        ...createErrorLogObject(error),
       });
 
       throw new GitHubAPIError('Failed to make GitHub API request', {
@@ -116,8 +116,7 @@ export class GitHubClient {
     } catch (error) {
       this.logger.error('GitHub API connection test failed', {
         org: this.org,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
+        ...createErrorLogObject(error),
       });
       throw new GitHubAPIError('Failed to connect to GitHub API', { error });
     }

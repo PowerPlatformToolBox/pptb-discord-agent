@@ -7,6 +7,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from '../config/config';
 import type { BotCommand } from '../types';
+import { createErrorLogObject } from '../utils/errorHelper';
 import { getLogger } from '../utils/logger';
 
 async function deployCommands(): Promise<void> {
@@ -78,10 +79,7 @@ async function deployCommands(): Promise<void> {
     }
   } catch (error) {
     const logger = getLogger();
-    logger.error('Failed to deploy commands', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    logger.error('Failed to deploy commands', createErrorLogObject(error));
     process.exit(1);
   }
 }

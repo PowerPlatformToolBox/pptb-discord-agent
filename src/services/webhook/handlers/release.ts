@@ -6,6 +6,7 @@ import { loadWebhookConfig } from '../../../config/webhook';
 import { PLATFORM_EMOJIS } from '../../../constants/discord';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
+import { getErrorMessage } from '../../../utils/errorHelper';
 import { getLogger } from '../../../utils/logger';
 import { createDesktopAppReleaseEmbed } from '../embeds';
 
@@ -174,7 +175,7 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     });
   } catch (error) {
     logger.error('Failed to post release announcement', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: getErrorMessage(error),
     });
   }
 }
