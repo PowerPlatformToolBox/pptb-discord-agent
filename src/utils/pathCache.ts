@@ -1,8 +1,13 @@
 /**
  * Path caching utility to reduce repeated path construction overhead
  * Caches commonly used file system paths to avoid redundant join() calls
+ *
+ * **Thread Safety Note:**
+ * This implementation assumes single-threaded Node.js event loop.
+ * Not safe for worker threads without additional synchronization.
  */
 
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 class PathCache {
@@ -39,7 +44,7 @@ class PathCache {
   }
 }
 
-// Singleton instance
+// Singleton instance (safe in single-threaded Node.js event loop)
 let pathCacheInstance: PathCache | null = null;
 
 export function getPathCache(): PathCache {
@@ -56,24 +61,38 @@ export class AppPaths {
   private static cache = getPathCache();
 
   /**
+   * Generate a safe cache key by hashing baseDir to avoid collisions
+   */
+  private static getCacheKey(prefix: string, baseDir: string, ...parts: string[]): string {
+    // Hash baseDir to avoid issues with special characters
+    const hash = createHash('md5').update(baseDir).digest('hex').substring(0, 8);
+    const suffix = parts.length > 0 ? `:${parts.join(':')}` : '';
+    return `${prefix}:${hash}${suffix}`;
+  }
+
+  /**
    * Get handlers/commands directory path
    */
   public static getCommandsPath(baseDir: string): string {
-    return this.cache.getPath(`commands:${baseDir}`, () => join(baseDir, 'handlers', 'commands'));
+    return this.cache.getPath(this.getCacheKey('commands', baseDir), () =>
+      join(baseDir, 'handlers', 'commands')
+    );
   }
 
   /**
    * Get handlers/events directory path
    */
   public static getEventsPath(baseDir: string): string {
-    return this.cache.getPath(`events:${baseDir}`, () => join(baseDir, 'handlers', 'events'));
+    return this.cache.getPath(this.getCacheKey('events', baseDir), () =>
+      join(baseDir, 'handlers', 'events')
+    );
   }
 
   /**
    * Get command folder path
    */
   public static getCommandFolderPath(baseDir: string, folder: string): string {
-    return this.cache.getPath(`commandFolder:${baseDir}:${folder}`, () =>
+    return this.cache.getPath(this.getCacheKey('commandFolder', baseDir, folder), () =>
       join(baseDir, 'handlers', 'commands', folder)
     );
   }
