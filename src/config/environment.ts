@@ -22,6 +22,12 @@ const environmentSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   ENABLE_FILE_LOGS: z.enum(['true', 'false']).optional().default('false'),
   LOG_DIR: z.string().optional().default('./logs'),
+  WEBHOOK_PORT: z.coerce.number().default(3000),
+  WEBHOOK_SECRET: z.string().optional(),
+  PROJECT_THREAD_CHANNEL_ID: z.string().min(1, 'PROJECT_THREAD_CHANNEL_ID is required'),
+  RELEASE_CHANNEL_ID: z.string().min(1, 'RELEASE_CHANNEL_ID is required'),
+  WATCHED_REPOSITORIES: z.string().default('desktop-app'),
+  WATCHED_LABELS: z.string().default('DiscordDiscussion'),
 });
 
 /**

@@ -2,7 +2,7 @@
  * GitHub release webhook handler
  */
 import { type Client, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } from 'discord.js';
-import { loadWebhookConfig } from '../../../config/webhook';
+import { getConfig } from '../../../config/config';
 import { PLATFORM_EMOJIS } from '../../../constants/discord';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
@@ -12,7 +12,7 @@ import { createDesktopAppReleaseEmbed } from '../embeds';
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
   const logger = getLogger();
-  const config = loadWebhookConfig();
+  const config = getConfig().webhook;
 
   logger.info('handleRelease called', {
     action: payload.action,

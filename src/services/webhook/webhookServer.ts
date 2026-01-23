@@ -5,14 +5,14 @@
 import type { Client } from 'discord.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { loadWebhookConfig } from '../../config/webhook';
+import { getConfig } from '../../config/config';
 import type { GitHubWebhookPayload } from '../../types/webhook';
 import { createErrorLogObject } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
 
 export class WebhookServer {
   private readonly logger = getLogger();
-  private readonly config = loadWebhookConfig();
+  private readonly config = getConfig().webhook;
   private server: ReturnType<typeof createServer> | null = null;
   private discordClient: Client | null = null;
 

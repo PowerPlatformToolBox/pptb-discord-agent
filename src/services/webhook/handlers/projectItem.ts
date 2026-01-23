@@ -3,8 +3,8 @@
  */
 
 import { ChannelType, type Client, EmbedBuilder } from 'discord.js';
+import { getConfig } from '../../../config/config';
 import { CONSTANTS } from '../../../config/constants';
-import { loadWebhookConfig } from '../../../config/webhook';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
@@ -15,7 +15,7 @@ export async function handleProjectItem(
   client: Client
 ): Promise<void> {
   const logger = getLogger();
-  const config = loadWebhookConfig();
+  const config = getConfig().webhook;
 
   // Only handle 'labeled' action
   if (payload.action !== 'labeled') {
