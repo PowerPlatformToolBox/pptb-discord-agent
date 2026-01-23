@@ -72,11 +72,17 @@ export class WebhookServer {
     const MAX_BODY_SIZE = 10 * 1024 * 1024;
     let body = '';
     let bodySize = 0;
+    let requestTerminated = false;
 
     req.on('data', (chunk) => {
+      if (requestTerminated) {
+        return; // Ignore further data if request was terminated
+      }
+
       bodySize += chunk.length;
       if (bodySize > MAX_BODY_SIZE) {
         this.logger.warn('Request body too large', { size: bodySize });
+        requestTerminated = true;
         req.destroy();
         res.writeHead(413, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Request body too large' }));
@@ -86,6 +92,11 @@ export class WebhookServer {
     });
 
     req.on('end', async () => {
+      // Skip processing if request was terminated due to size limit
+      if (requestTerminated) {
+        return;
+      }
+
       try {
         // Verify signature if secret is configured
         if (this.config.secret) {

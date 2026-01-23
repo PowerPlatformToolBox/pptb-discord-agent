@@ -9,7 +9,7 @@ import { loadConfig } from '../config/config';
 import type { BotCommand } from '../types';
 import { createErrorLogObject } from '../utils/errorHelper';
 import { getLogger } from '../utils/logger';
-import { getPathCache } from '../utils/pathCache';
+import { AppPaths } from '../utils/pathCache';
 
 async function deployCommands(): Promise<void> {
   try {
@@ -19,19 +19,16 @@ async function deployCommands(): Promise<void> {
 
     // When run via tsx, use dist folder (production build)
     // __dirname will be /app/dist/scripts after compilation
-    const pathCache = getPathCache();
-    const commandsPath = pathCache.getPath('deploy:commands', () =>
-      join(__dirname, '..', 'handlers', 'commands')
-    );
+    // Use parent directory path for consistency with main.ts
+    const baseDir = join(__dirname, '..');
+    const commandsPath = AppPaths.getCommandsPath(baseDir);
 
     logger.info('Loading commands from', { path: commandsPath });
 
     const commandFolders = await readdir(commandsPath);
 
     for (const folder of commandFolders) {
-      const folderPath = pathCache.getPath(`deploy:commandFolder:${folder}`, () =>
-        join(commandsPath, folder)
-      );
+      const folderPath = AppPaths.getCommandFolderPath(baseDir, folder);
       const commandFiles = (await readdir(folderPath)).filter((file) => file.endsWith('.js'));
 
       logger.info('Scanning folder', { folder, files: commandFiles.length });

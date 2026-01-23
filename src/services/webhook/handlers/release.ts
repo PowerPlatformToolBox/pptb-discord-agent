@@ -80,7 +80,16 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     if (release.assets && release.assets.length > 0) {
       const downloadButtons: ButtonBuilder[] = [];
 
+      // Helper to check for platform token at word boundaries to avoid false positives
+      const hasPlatformToken = (filename: string, token: string): boolean => {
+        // Match token at start/end or separated by dot/underscore/hyphen
+        const pattern = new RegExp(`(?:^|[._-])${token}(?:[._-]|$)`, 'i');
+        return pattern.test(filename);
+      };
+
       // Single-pass asset scanning for efficiency
+      // Platform detection precedence: Windows > macOS > Linux
+      // Each asset is assigned to at most one platform
       const platformAssets = {
         windows: null as typeof release.assets[0] | null,
         mac: null as typeof release.assets[0] | null,
@@ -89,17 +98,30 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
 
       for (const asset of release.assets) {
         const nameLower = asset.name.toLowerCase();
-        
+
         // Windows installer
-        if (!platformAssets.windows && (nameLower.endsWith('.exe') || nameLower.includes('win'))) {
+        if (
+          !platformAssets.windows &&
+          (nameLower.endsWith('.exe') ||
+            hasPlatformToken(nameLower, 'win') ||
+            hasPlatformToken(nameLower, 'windows'))
+        ) {
           platformAssets.windows = asset;
         }
         // macOS installer
-        else if (!platformAssets.mac && (nameLower.includes('mac') || nameLower.includes('darwin') || nameLower.endsWith('.dmg'))) {
+        else if (
+          !platformAssets.mac &&
+          (hasPlatformToken(nameLower, 'mac') ||
+            hasPlatformToken(nameLower, 'darwin') ||
+            nameLower.endsWith('.dmg'))
+        ) {
           platformAssets.mac = asset;
         }
         // Linux AppImage
-        else if (!platformAssets.linux && (nameLower.endsWith('.appimage') || nameLower.includes('linux'))) {
+        else if (
+          !platformAssets.linux &&
+          (nameLower.endsWith('.appimage') || hasPlatformToken(nameLower, 'linux'))
+        ) {
           platformAssets.linux = asset;
         }
 

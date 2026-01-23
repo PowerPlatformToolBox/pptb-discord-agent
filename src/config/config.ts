@@ -55,7 +55,18 @@ export function loadConfig(): AppConfig {
       },
     };
 
+    // Validate that arrays are non-empty (logged as warning, not error)
+    // Empty arrays mean no repositories/labels will be watched
     const logger = getLogger();
+    if (cachedConfig.webhook.watchedRepositories.length === 0) {
+      logger.warn(
+        'No watched repositories configured - release webhooks will not match any events'
+      );
+    }
+    if (cachedConfig.webhook.watchedLabels.length === 0) {
+      logger.warn('No watched labels configured - project item webhooks will not match any events');
+    }
+
     logger.info('Configuration loaded', {
       nodeEnv: cachedConfig.nodeEnv,
       logLevel: cachedConfig.logging.level,

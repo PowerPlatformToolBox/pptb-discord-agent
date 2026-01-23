@@ -7,7 +7,6 @@
  * Not safe for worker threads without additional synchronization.
  */
 
-import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 class PathCache {
@@ -56,18 +55,19 @@ export function getPathCache(): PathCache {
 
 /**
  * Helper to get commonly used application paths
+ * Uses simple string escaping for cache keys to avoid hashing overhead
  */
 export class AppPaths {
   private static cache = getPathCache();
 
   /**
-   * Generate a safe cache key by hashing baseDir to avoid collisions
+   * Generate a safe cache key using escape sequences for special characters
    */
   private static getCacheKey(prefix: string, baseDir: string, ...parts: string[]): string {
-    // Hash baseDir to avoid issues with special characters
-    const hash = createHash('md5').update(baseDir).digest('hex').substring(0, 8);
-    const suffix = parts.length > 0 ? `:${parts.join(':')}` : '';
-    return `${prefix}:${hash}${suffix}`;
+    // Replace special characters with escaped versions to avoid collisions
+    const safePath = baseDir.replace(/:/g, '::').replace(/\|/g, ':pipe:');
+    const suffix = parts.length > 0 ? `|${parts.join('|')}` : '';
+    return `${prefix}:${safePath}${suffix}`;
   }
 
   /**
