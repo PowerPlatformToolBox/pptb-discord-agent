@@ -12,13 +12,13 @@ interface CacheEntry {
 
 class ChannelCache {
   private readonly cache = new Map<string, CacheEntry>();
-  private readonly ttl: number = 5 * 60 * 1000; // 5 minutes
+  private readonly ttl: number = 300000; // 5 minutes in milliseconds
   private readonly logger = getLogger('ChannelCache');
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     // Start periodic cleanup every 10 minutes
-    this.cleanupInterval = setInterval(() => this.cleanup(), 10 * 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), 600000);
   }
 
   public async fetch(client: Client, channelId: string): Promise<Channel | null> {
