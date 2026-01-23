@@ -42,8 +42,12 @@ export function loadConfig(): AppConfig {
         secret: env.WEBHOOK_SECRET,
         projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
         releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
-        watchedRepositories: env.WATCHED_REPOSITORIES.split(',').map((r) => r.trim()),
-        watchedLabels: env.WATCHED_LABELS.split(',').map((l) => l.trim()),
+        watchedRepositories: env.WATCHED_REPOSITORIES.split(',')
+          .map((r) => r.trim())
+          .filter((r) => r.length > 0),
+        watchedLabels: env.WATCHED_LABELS.split(',')
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0),
       },
       nodeEnv: env.NODE_ENV ?? 'development',
       sentry: {
