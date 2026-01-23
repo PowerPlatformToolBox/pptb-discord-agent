@@ -14,6 +14,7 @@ import type { BotCommand, BotEvent } from './types';
 import type { GitHubWebhookPayload } from './types/webhook';
 import { createErrorLogObject } from './utils/errorHelper';
 import { getLogger } from './utils/logger';
+import { AppPaths } from './utils/pathCache';
 import { initializeSentry, captureException, addBreadcrumb } from './utils/sentryHelper';
 
 declare module 'discord.js' {
@@ -43,11 +44,11 @@ async function main(): Promise<void> {
     client.commands = new Collection();
 
     // Load commands
-    const commandsPath = join(__dirname, 'handlers', 'commands');
+    const commandsPath = AppPaths.getCommandsPath(__dirname);
     const commandFolders = await readdir(commandsPath);
 
     for (const folder of commandFolders) {
-      const folderPath = join(commandsPath, folder);
+      const folderPath = AppPaths.getCommandFolderPath(__dirname, folder);
       const commandFiles = (await readdir(folderPath)).filter((file) => file.endsWith('.js'));
 
       for (const file of commandFiles) {
@@ -65,7 +66,7 @@ async function main(): Promise<void> {
     }
 
     // Load events
-    const eventsPath = join(__dirname, 'handlers', 'events');
+    const eventsPath = AppPaths.getEventsPath(__dirname);
     const eventFiles = (await readdir(eventsPath)).filter((file) => file.endsWith('.js'));
 
     for (const file of eventFiles) {
