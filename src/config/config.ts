@@ -42,12 +42,20 @@ export function loadConfig(): AppConfig {
         secret: env.WEBHOOK_SECRET,
         projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
         releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
-        watchedRepositories: env.WATCHED_REPOSITORIES.split(',')
-          .map((r) => r.trim())
-          .filter((r) => r.length > 0),
-        watchedLabels: env.WATCHED_LABELS.split(',')
-          .map((l) => l.trim())
-          .filter((l) => l.length > 0),
+        watchedRepositories: (() => {
+          const parsed = env.WATCHED_REPOSITORIES.split(',')
+            .map((r) => r.trim())
+            .filter((r) => r.length > 0);
+          // If parsing results in empty array, fall back to schema default
+          return parsed.length > 0 ? parsed : ['desktop-app'];
+        })(),
+        watchedLabels: (() => {
+          const parsed = env.WATCHED_LABELS.split(',')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+          // If parsing results in empty array, fall back to schema default
+          return parsed.length > 0 ? parsed : ['DiscordDiscussion'];
+        })(),
       },
       nodeEnv: env.NODE_ENV ?? 'development',
       sentry: {
@@ -55,17 +63,7 @@ export function loadConfig(): AppConfig {
       },
     };
 
-    // Validate that arrays are non-empty (logged as warning, not error)
-    // Empty arrays mean no repositories/labels will be watched
     const logger = getLogger();
-    if (cachedConfig.webhook.watchedRepositories.length === 0) {
-      logger.warn(
-        'No watched repositories configured - release webhooks will not match any events'
-      );
-    }
-    if (cachedConfig.webhook.watchedLabels.length === 0) {
-      logger.warn('No watched labels configured - project item webhooks will not match any events');
-    }
 
     logger.info('Configuration loaded', {
       nodeEnv: cachedConfig.nodeEnv,
