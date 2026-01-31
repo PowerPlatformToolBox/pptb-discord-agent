@@ -124,6 +124,16 @@ export function getLogger(moduleName?: string): Logger {
 
 /**
  * Logger factory for consistent initialization patterns
+ *
+ * This factory provides semantic methods for creating loggers with appropriate context.
+ * All codebase loggers now use LoggerFactory for consistency and maintainability.
+ *
+ * Usage examples:
+ * - Services: `LoggerFactory.forService('MyService')`
+ * - Events: `LoggerFactory.forEvent('MessageCreate')`
+ * - Commands: `LoggerFactory.forCommand('ping')`
+ * - Webhooks: `LoggerFactory.forWebhook('Release')`
+ * - Generic: `LoggerFactory.generic()` (use sparingly for non-categorized contexts)
  */
 export class LoggerFactory {
   /**

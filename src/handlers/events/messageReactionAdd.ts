@@ -8,12 +8,12 @@ import type { MessageReactionAddEvent } from '../../types';
 import { getChannelCache } from '../../utils/channelCache';
 import { createErrorLogObject } from '../../utils/errorHelper';
 import { createErrorEmbed, createMessageLogEmbed } from '../../utils/embedBuilder';
-import { getLogger } from '../../utils/logger';
+import { LoggerFactory } from '../../utils/logger';
 
 export const messageReactionAddEvent: MessageReactionAddEvent = {
   name: Events.MessageReactionAdd,
   async execute(reaction: MessageReaction, user: User): Promise<void> {
-    const logger = getLogger();
+    const logger = LoggerFactory.forEvent('MessageReactionAdd');
     const config = getConfig();
 
     try {

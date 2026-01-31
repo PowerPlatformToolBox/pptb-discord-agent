@@ -8,13 +8,13 @@ import { CONSTANTS } from '../../../config/constants';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
-import { getLogger } from '../../../utils/logger';
+import { LoggerFactory } from '../../../utils/logger';
 
 export async function handleProjectItem(
   payload: GitHubWebhookPayload,
   client: Client
 ): Promise<void> {
-  const logger = getLogger();
+  const logger = LoggerFactory.forWebhook('ProjectItem');
   const config = getConfig().webhook;
 
   // Only handle 'labeled' action

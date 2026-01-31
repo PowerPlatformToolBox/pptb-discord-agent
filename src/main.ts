@@ -13,7 +13,7 @@ import { createWebhookServer } from './services/webhook/webhookServer';
 import type { BotCommand, BotEvent } from './types';
 import type { GitHubWebhookPayload } from './types/webhook';
 import { createErrorLogObject } from './utils/errorHelper';
-import { getLogger } from './utils/logger';
+import { LoggerFactory } from './utils/logger';
 import { AppPaths } from './utils/pathCache';
 import { initializeSentry, captureException, addBreadcrumb } from './utils/sentryHelper';
 
@@ -26,7 +26,7 @@ declare module 'discord.js' {
 async function main(): Promise<void> {
   try {
     const config = loadConfig();
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
 
     // Initialize Sentry for error tracking (if DSN provided)
     initializeSentry(config.sentry?.dsn);
@@ -136,7 +136,7 @@ async function main(): Promise<void> {
       process.exit(0);
     });
   } catch (error) {
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
     logger.error('Failed to start bot', createErrorLogObject(error));
     captureException(error, { stage: 'startup' });
     process.exit(1);

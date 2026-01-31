@@ -7,11 +7,11 @@ import { PLATFORM_EMOJIS } from '../../../constants/discord';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
-import { getLogger } from '../../../utils/logger';
+import { LoggerFactory } from '../../../utils/logger';
 import { createDesktopAppReleaseEmbed } from '../embeds';
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
-  const logger = getLogger();
+  const logger = LoggerFactory.forWebhook('Release');
   const config = getConfig().webhook;
 
   logger.info('handleRelease called', {

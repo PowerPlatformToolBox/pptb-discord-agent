@@ -4,7 +4,7 @@
 
 import type { AppConfig } from '../types';
 import { ConfigurationError } from '../types/errors';
-import { getLogger } from '../utils/logger';
+import { LoggerFactory } from '../utils/logger';
 import { validateEnvironment } from './environment';
 
 let cachedConfig: AppConfig | null = null;
@@ -63,7 +63,10 @@ export function loadConfig(): AppConfig {
       },
     };
 
-    const logger = getLogger();
+    // Logger is initialized here after config is created
+    // IMPORTANT: Logger must remain independent of this config to avoid circular dependencies
+    // Logger reads from process.env directly and should not call loadConfig()
+    const logger = LoggerFactory.generic();
 
     logger.info('Configuration loaded', {
       nodeEnv: cachedConfig.nodeEnv,

@@ -11,12 +11,12 @@ import type {
 } from '../../types';
 import { GitHubAPIError } from '../../types/errors';
 import { getErrorMessage } from '../../utils/errorHelper';
-import { getLogger } from '../../utils/logger';
+import { LoggerFactory } from '../../utils/logger';
 import { sanitizeIssueInput, validateLabels, validateRepoName } from '../../utils/validators';
 import { getGitHubClient } from './githubClient';
 
 export class GitHubIssueService {
-  private readonly logger = getLogger();
+  private readonly logger = LoggerFactory.forService('GitHubIssueService');
   private readonly client = getGitHubClient();
 
   public async createIssue(

@@ -3,7 +3,7 @@
  */
 
 import type { Channel, Client } from 'discord.js';
-import { getLogger } from './logger';
+import { LoggerFactory } from './logger';
 
 interface CacheEntry {
   channel: Channel;
@@ -13,7 +13,7 @@ interface CacheEntry {
 class ChannelCache {
   private readonly cache = new Map<string, CacheEntry>();
   private readonly ttl: number = 300000; // 5 minutes in milliseconds
-  private readonly logger = getLogger('ChannelCache');
+  private readonly logger = LoggerFactory.forService('ChannelCache');
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {

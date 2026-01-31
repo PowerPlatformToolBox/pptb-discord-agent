@@ -8,13 +8,13 @@ import { join } from 'node:path';
 import { loadConfig } from '../config/config';
 import type { BotCommand } from '../types';
 import { createErrorLogObject } from '../utils/errorHelper';
-import { getLogger } from '../utils/logger';
+import { LoggerFactory } from '../utils/logger';
 import { AppPaths } from '../utils/pathCache';
 
 async function deployCommands(): Promise<void> {
   try {
     const config = loadConfig();
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
     const commands: unknown[] = [];
 
     // When run via tsx, use dist folder (production build)
@@ -81,7 +81,7 @@ async function deployCommands(): Promise<void> {
       logger.warn('For instant testing, set DISCORD_GUILD_ID in .env');
     }
   } catch (error) {
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
     logger.error('Failed to deploy commands', createErrorLogObject(error));
     process.exit(1);
   }
