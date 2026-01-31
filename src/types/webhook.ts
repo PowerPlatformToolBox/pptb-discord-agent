@@ -65,12 +65,3 @@ export interface GitHubWebhookPayload {
     };
   };
 }
-
-export interface WebhookConfig {
-  port: number;
-  secret?: string;
-  projectThreadChannel: string;
-  releaseAnnouncementChannel: string;
-  watchedRepositories: string[];
-  watchedLabels: string[];
-}

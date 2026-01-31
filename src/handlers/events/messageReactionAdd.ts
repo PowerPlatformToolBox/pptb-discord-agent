@@ -5,13 +5,15 @@
 import { ChannelType, Events, type MessageReaction, type TextChannel, type User } from 'discord.js';
 import { getConfig } from '../../config/config';
 import type { MessageReactionAddEvent } from '../../types';
+import { getChannelCache } from '../../utils/channelCache';
+import { createErrorLogObject } from '../../utils/errorHelper';
 import { createErrorEmbed, createMessageLogEmbed } from '../../utils/embedBuilder';
-import { getLogger } from '../../utils/logger';
+import { LoggerFactory } from '../../utils/logger';
 
 export const messageReactionAddEvent: MessageReactionAddEvent = {
   name: Events.MessageReactionAdd,
   async execute(reaction: MessageReaction, user: User): Promise<void> {
-    const logger = getLogger();
+    const logger = LoggerFactory.forEvent('MessageReactionAdd');
     const config = getConfig();
 
     try {
@@ -47,7 +49,8 @@ export const messageReactionAddEvent: MessageReactionAddEvent = {
         return;
       }
 
-      const logChannel = await message.guild.channels.fetch(config.logging.channelId);
+      const channelCache = getChannelCache();
+      const logChannel = await channelCache.fetch(message.client, config.logging.channelId);
       if (!logChannel) {
         logger.error('Log channel not found', { channelId: config.logging.channelId });
         return;
@@ -69,10 +72,7 @@ export const messageReactionAddEvent: MessageReactionAddEvent = {
         channelId: message.channel.id,
       });
     } catch (error) {
-      logger.error('Error in messageReactionAdd handler', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      logger.error('Error in messageReactionAdd handler', createErrorLogObject(error));
 
       try {
         const errorEmbed = createErrorEmbed(

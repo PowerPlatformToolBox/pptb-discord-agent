@@ -2,15 +2,17 @@
  * GitHub release webhook handler
  */
 import { type Client, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } from 'discord.js';
-import { loadWebhookConfig } from '../../../config/webhook';
+import { getConfig } from '../../../config/config';
 import { PLATFORM_EMOJIS } from '../../../constants/discord';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
-import { getLogger } from '../../../utils/logger';
+import { getChannelCache } from '../../../utils/channelCache';
+import { getErrorMessage } from '../../../utils/errorHelper';
+import { LoggerFactory } from '../../../utils/logger';
 import { createDesktopAppReleaseEmbed } from '../embeds';
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
-  const logger = getLogger();
-  const config = loadWebhookConfig();
+  const logger = LoggerFactory.forWebhook('Release');
+  const config = getConfig().webhook;
 
   logger.info('handleRelease called', {
     action: payload.action,
@@ -45,7 +47,8 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
   }
 
   try {
-    const channel = await client.channels.fetch(config.releaseAnnouncementChannel);
+    const channelCache = getChannelCache();
+    const channel = await channelCache.fetch(client, config.releaseAnnouncementChannel);
 
     if (!channel || !channel.isTextBased()) {
       logger.error('Invalid release channel', { channelId: config.releaseAnnouncementChannel });
@@ -77,15 +80,62 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     if (release.assets && release.assets.length > 0) {
       const downloadButtons: ButtonBuilder[] = [];
 
-      // Windows installer
-      const windowsAsset = release.assets.find(
-        (asset) =>
-          asset.name.toLowerCase().endsWith('.exe') || asset.name.toLowerCase().includes('win')
-      );
-      if (windowsAsset) {
+      // Helper to check for platform token at word boundaries to avoid false positives
+      const hasPlatformToken = (filename: string, token: string): boolean => {
+        // Match token at start/end or separated by dot/underscore/hyphen
+        const pattern = new RegExp(`(?:^|[._-])${token}(?:[._-]|$)`, 'i');
+        return pattern.test(filename);
+      };
+
+      // Single-pass asset scanning for efficiency
+      // Platform detection precedence: Windows > macOS > Linux
+      // Each asset is assigned to at most one platform
+      const platformAssets = {
+        windows: null as typeof release.assets[0] | null,
+        mac: null as typeof release.assets[0] | null,
+        linux: null as typeof release.assets[0] | null,
+      };
+
+      for (const asset of release.assets) {
+        const nameLower = asset.name.toLowerCase();
+
+        // Windows installer
+        if (
+          !platformAssets.windows &&
+          (nameLower.endsWith('.exe') ||
+            hasPlatformToken(nameLower, 'win') ||
+            hasPlatformToken(nameLower, 'windows'))
+        ) {
+          platformAssets.windows = asset;
+        }
+        // macOS installer
+        else if (
+          !platformAssets.mac &&
+          (hasPlatformToken(nameLower, 'mac') ||
+            hasPlatformToken(nameLower, 'darwin') ||
+            nameLower.endsWith('.dmg'))
+        ) {
+          platformAssets.mac = asset;
+        }
+        // Linux AppImage
+        else if (
+          !platformAssets.linux &&
+          (nameLower.endsWith('.appimage') || hasPlatformToken(nameLower, 'linux'))
+        ) {
+          platformAssets.linux = asset;
+        }
+
+        // Exit early if all platforms found
+        if (platformAssets.windows && platformAssets.mac && platformAssets.linux) {
+          break;
+        }
+      }
+
+      // Create Windows button
+      if (platformAssets.windows) {
         const winButton = new ButtonBuilder()
           .setLabel('Windows')
-          .setURL(windowsAsset.browser_download_url)
+          .setURL(platformAssets.windows.browser_download_url)
           .setStyle(ButtonStyle.Link);
 
         try {
@@ -97,17 +147,11 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
         downloadButtons.push(winButton);
       }
 
-      // macOS installer
-      const macAsset = release.assets.find(
-        (asset) =>
-          asset.name.toLowerCase().includes('mac') ||
-          asset.name.toLowerCase().includes('darwin') ||
-          asset.name.toLowerCase().endsWith('.dmg')
-      );
-      if (macAsset) {
+      // Create macOS button
+      if (platformAssets.mac) {
         const macButton = new ButtonBuilder()
           .setLabel('macOS')
-          .setURL(macAsset.browser_download_url)
+          .setURL(platformAssets.mac.browser_download_url)
           .setStyle(ButtonStyle.Link);
 
         try {
@@ -119,16 +163,11 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
         downloadButtons.push(macButton);
       }
 
-      // Linux AppImage
-      const linuxAsset = release.assets.find(
-        (asset) =>
-          asset.name.toLowerCase().endsWith('.appimage') ||
-          asset.name.toLowerCase().includes('linux')
-      );
-      if (linuxAsset) {
+      // Create Linux button
+      if (platformAssets.linux) {
         const linuxButton = new ButtonBuilder()
           .setLabel('Linux')
-          .setURL(linuxAsset.browser_download_url)
+          .setURL(platformAssets.linux.browser_download_url)
           .setStyle(ButtonStyle.Link);
 
         try {
@@ -158,7 +197,7 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     });
   } catch (error) {
     logger.error('Failed to post release announcement', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: getErrorMessage(error),
     });
   }
 }

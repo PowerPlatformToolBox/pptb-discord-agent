@@ -3,29 +3,33 @@
  */
 
 import { REST, Routes } from 'discord.js';
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from '../config/config';
 import type { BotCommand } from '../types';
-import { getLogger } from '../utils/logger';
+import { createErrorLogObject } from '../utils/errorHelper';
+import { LoggerFactory } from '../utils/logger';
+import { AppPaths } from '../utils/pathCache';
 
 async function deployCommands(): Promise<void> {
   try {
     const config = loadConfig();
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
     const commands: unknown[] = [];
 
     // When run via tsx, use dist folder (production build)
     // __dirname will be /app/dist/scripts after compilation
-    const commandsPath = join(__dirname, '..', 'handlers', 'commands');
+    // Use parent directory path for consistency with main.ts
+    const baseDir = join(__dirname, '..');
+    const commandsPath = AppPaths.getCommandsPath(baseDir);
 
     logger.info('Loading commands from', { path: commandsPath });
 
-    const commandFolders = readdirSync(commandsPath);
+    const commandFolders = await readdir(commandsPath);
 
     for (const folder of commandFolders) {
-      const folderPath = join(commandsPath, folder);
-      const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+      const folderPath = AppPaths.getCommandFolderPath(baseDir, folder);
+      const commandFiles = (await readdir(folderPath)).filter((file) => file.endsWith('.js'));
 
       logger.info('Scanning folder', { folder, files: commandFiles.length });
 
@@ -77,11 +81,8 @@ async function deployCommands(): Promise<void> {
       logger.warn('For instant testing, set DISCORD_GUILD_ID in .env');
     }
   } catch (error) {
-    const logger = getLogger();
-    logger.error('Failed to deploy commands', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    const logger = LoggerFactory.generic();
+    logger.error('Failed to deploy commands', createErrorLogObject(error));
     process.exit(1);
   }
 }

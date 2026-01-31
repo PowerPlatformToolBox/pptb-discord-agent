@@ -3,17 +3,19 @@
  */
 
 import { ChannelType, type Client, EmbedBuilder } from 'discord.js';
+import { getConfig } from '../../../config/config';
 import { CONSTANTS } from '../../../config/constants';
-import { loadWebhookConfig } from '../../../config/webhook';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
-import { getLogger } from '../../../utils/logger';
+import { getChannelCache } from '../../../utils/channelCache';
+import { getErrorMessage } from '../../../utils/errorHelper';
+import { LoggerFactory } from '../../../utils/logger';
 
 export async function handleProjectItem(
   payload: GitHubWebhookPayload,
   client: Client
 ): Promise<void> {
-  const logger = getLogger();
-  const config = loadWebhookConfig();
+  const logger = LoggerFactory.forWebhook('ProjectItem');
+  const config = getConfig().webhook;
 
   // Only handle 'labeled' action
   if (payload.action !== 'labeled') {
@@ -40,7 +42,8 @@ export async function handleProjectItem(
   }
 
   try {
-    const channel = await client.channels.fetch(config.projectThreadChannel);
+    const channelCache = getChannelCache();
+    const channel = await channelCache.fetch(client, config.projectThreadChannel);
 
     if (!channel || !channel.isTextBased() || channel.type !== ChannelType.GuildText) {
       logger.error('Invalid thread channel', { channelId: config.projectThreadChannel });
@@ -106,7 +109,7 @@ export async function handleProjectItem(
     });
   } catch (error) {
     logger.error('Failed to create thread', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: getErrorMessage(error),
     });
   }
 }

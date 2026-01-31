@@ -1,5 +1,26 @@
 /**
  * Application logger using Winston
+ *
+ * **Efficiency Notes:**
+ * - Console-only logging by default (no file I/O overhead)
+ * - File logging explicitly disabled unless ENABLE_FILE_LOGS=true
+ * - Singleton pattern ensures one logger instance
+ * - Child loggers cached per module name
+ * - Sentry integration for critical errors only
+ *
+ * **Usage Patterns:**
+ * - Services/Classes: Use module name for better tracing
+ *   ```typescript
+ *   private readonly logger = getLogger('MyService');
+ *   ```
+ * - Event handlers: Use descriptive module name
+ *   ```typescript
+ *   const logger = getLogger('InteractionCreate');
+ *   ```
+ * - One-off functions: Use without module name
+ *   ```typescript
+ *   const logger = getLogger();
+ *   ```
  */
 
 import fs from 'node:fs';
@@ -69,6 +90,21 @@ function createAppLogger(): Logger {
 
 /**
  * Returns a singleton Winston logger instance.
+ *
+ * @param moduleName - Optional module identifier for better log tracing
+ * @returns Logger instance (root or child logger if moduleName provided)
+ *
+ * @example
+ * // In services/classes - use module name
+ * private readonly logger = getLogger('GitHubService');
+ *
+ * @example
+ * // In event handlers - use descriptive name
+ * const logger = getLogger('MessageReactionAdd');
+ *
+ * @example
+ * // In one-off functions - no module name needed
+ * const logger = getLogger();
  */
 export function getLogger(moduleName?: string): Logger {
   if (!loggerInstance) {
@@ -84,4 +120,54 @@ export function getLogger(moduleName?: string): Logger {
   }
 
   return childLoggers[moduleName];
+}
+
+/**
+ * Logger factory for consistent initialization patterns
+ *
+ * This factory provides semantic methods for creating loggers with appropriate context.
+ * All codebase loggers now use LoggerFactory for consistency and maintainability.
+ *
+ * Usage examples:
+ * - Services: `LoggerFactory.forService('MyService')`
+ * - Events: `LoggerFactory.forEvent('MessageCreate')`
+ * - Commands: `LoggerFactory.forCommand('ping')`
+ * - Webhooks: `LoggerFactory.forWebhook('Release')`
+ * - Generic: `LoggerFactory.generic()` (use sparingly for non-categorized contexts)
+ */
+export class LoggerFactory {
+  /**
+   * Create a logger for a service class
+   */
+  public static forService(serviceName: string): Logger {
+    return getLogger(serviceName);
+  }
+
+  /**
+   * Create a logger for an event handler
+   */
+  public static forEvent(eventName: string): Logger {
+    return getLogger(eventName);
+  }
+
+  /**
+   * Create a logger for a command handler
+   */
+  public static forCommand(commandName: string): Logger {
+    return getLogger(`Command:${commandName}`);
+  }
+
+  /**
+   * Create a logger for a webhook handler
+   */
+  public static forWebhook(webhookType: string): Logger {
+    return getLogger(`Webhook:${webhookType}`);
+  }
+
+  /**
+   * Create a generic logger (use sparingly)
+   */
+  public static generic(): Logger {
+    return getLogger();
+  }
 }

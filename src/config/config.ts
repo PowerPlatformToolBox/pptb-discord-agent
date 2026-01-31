@@ -4,6 +4,7 @@
 
 import type { AppConfig } from '../types';
 import { ConfigurationError } from '../types/errors';
+import { LoggerFactory } from '../utils/logger';
 import { validateEnvironment } from './environment';
 
 let cachedConfig: AppConfig | null = null;
@@ -36,11 +37,44 @@ export function loadConfig(): AppConfig {
       reaction: {
         logEmoji: env.REACTION_EMOJI ?? '📝',
       },
+      webhook: {
+        port: env.WEBHOOK_PORT,
+        secret: env.WEBHOOK_SECRET,
+        projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
+        releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
+        watchedRepositories: (() => {
+          const parsed = env.WATCHED_REPOSITORIES.split(',')
+            .map((r) => r.trim())
+            .filter((r) => r.length > 0);
+          // If parsing results in empty array, fall back to schema default
+          return parsed.length > 0 ? parsed : ['desktop-app'];
+        })(),
+        watchedLabels: (() => {
+          const parsed = env.WATCHED_LABELS.split(',')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 0);
+          // If parsing results in empty array, fall back to schema default
+          return parsed.length > 0 ? parsed : ['DiscordDiscussion'];
+        })(),
+      },
       nodeEnv: env.NODE_ENV ?? 'development',
       sentry: {
         dsn: env.SENTRY_DSN,
       },
     };
+
+    // Logger is initialized here after config is created
+    // IMPORTANT: Logger must remain independent of this config to avoid circular dependencies
+    // Logger reads from process.env directly and should not call loadConfig()
+    const logger = LoggerFactory.generic();
+
+    logger.info('Configuration loaded', {
+      nodeEnv: cachedConfig.nodeEnv,
+      logLevel: cachedConfig.logging.level,
+      webhookPort: cachedConfig.webhook.port,
+      watchedRepositories: cachedConfig.webhook.watchedRepositories,
+      watchedLabels: cachedConfig.webhook.watchedLabels,
+    });
 
     return cachedConfig;
   } catch (error) {

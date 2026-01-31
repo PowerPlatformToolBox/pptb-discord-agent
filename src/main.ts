@@ -3,7 +3,7 @@
  */
 
 import { Client, Collection } from 'discord.js';
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
@@ -12,7 +12,9 @@ import { handleRelease } from './services/webhook/handlers/release';
 import { createWebhookServer } from './services/webhook/webhookServer';
 import type { BotCommand, BotEvent } from './types';
 import type { GitHubWebhookPayload } from './types/webhook';
-import { getLogger } from './utils/logger';
+import { createErrorLogObject } from './utils/errorHelper';
+import { LoggerFactory } from './utils/logger';
+import { AppPaths } from './utils/pathCache';
 import { initializeSentry, captureException, addBreadcrumb } from './utils/sentryHelper';
 
 declare module 'discord.js' {
@@ -24,7 +26,7 @@ declare module 'discord.js' {
 async function main(): Promise<void> {
   try {
     const config = loadConfig();
-    const logger = getLogger();
+    const logger = LoggerFactory.generic();
 
     // Initialize Sentry for error tracking (if DSN provided)
     initializeSentry(config.sentry?.dsn);
@@ -42,12 +44,12 @@ async function main(): Promise<void> {
     client.commands = new Collection();
 
     // Load commands
-    const commandsPath = join(__dirname, 'handlers', 'commands');
-    const commandFolders = readdirSync(commandsPath);
+    const commandsPath = AppPaths.getCommandsPath(__dirname);
+    const commandFolders = await readdir(commandsPath);
 
     for (const folder of commandFolders) {
-      const folderPath = join(commandsPath, folder);
-      const commandFiles = readdirSync(folderPath).filter((file) => file.endsWith('.js'));
+      const folderPath = AppPaths.getCommandFolderPath(__dirname, folder);
+      const commandFiles = (await readdir(folderPath)).filter((file) => file.endsWith('.js'));
 
       for (const file of commandFiles) {
         const filePath = join(folderPath, file);
@@ -64,8 +66,8 @@ async function main(): Promise<void> {
     }
 
     // Load events
-    const eventsPath = join(__dirname, 'handlers', 'events');
-    const eventFiles = readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
+    const eventsPath = AppPaths.getEventsPath(__dirname);
+    const eventFiles = (await readdir(eventsPath)).filter((file) => file.endsWith('.js'));
 
     for (const file of eventFiles) {
       const filePath = join(eventsPath, file);
@@ -112,19 +114,13 @@ async function main(): Promise<void> {
 
     // Global error handlers
     process.on('unhandledRejection', (error: Error) => {
-      logger.error('Unhandled promise rejection', {
-        error: error.message,
-        stack: error.stack,
-      });
+      logger.error('Unhandled promise rejection', createErrorLogObject(error));
       captureException(error, { type: 'unhandledRejection' });
       addBreadcrumb('Unhandled rejection', 'error');
     });
 
     process.on('uncaughtException', (error: Error) => {
-      logger.error('Uncaught exception', {
-        error: error.message,
-        stack: error.stack,
-      });
+      logger.error('Uncaught exception', createErrorLogObject(error));
       captureException(error, { type: 'uncaughtException' });
       addBreadcrumb('Uncaught exception', 'error');
       process.exit(1);
@@ -140,11 +136,8 @@ async function main(): Promise<void> {
       process.exit(0);
     });
   } catch (error) {
-    const logger = getLogger();
-    logger.error('Failed to start bot', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    const logger = LoggerFactory.generic();
+    logger.error('Failed to start bot', createErrorLogObject(error));
     captureException(error, { stage: 'startup' });
     process.exit(1);
   }

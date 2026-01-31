@@ -27,11 +27,21 @@ export interface SentryConfig {
   dsn?: string;
 }
 
+export interface WebhookConfig {
+  port: number;
+  secret?: string;
+  projectThreadChannel: string;
+  releaseAnnouncementChannel: string;
+  watchedRepositories: string[];
+  watchedLabels: string[];
+}
+
 export interface AppConfig {
   discord: DiscordConfig;
   github: GitHubConfig;
   logging: LoggingConfig;
   reaction: ReactionConfig;
+  webhook: WebhookConfig;
   sentry?: SentryConfig;
   nodeEnv: 'development' | 'production' | 'test';
 }
@@ -49,4 +59,10 @@ export interface EnvironmentVariables {
   SENTRY_DSN?: string;
   ENABLE_FILE_LOGS?: string;
   LOG_DIR?: string;
+  WEBHOOK_PORT: number;
+  WEBHOOK_SECRET?: string;
+  PROJECT_THREAD_CHANNEL_ID: string;
+  RELEASE_CHANNEL_ID: string;
+  WATCHED_REPOSITORIES: string;
+  WATCHED_LABELS: string;
 }

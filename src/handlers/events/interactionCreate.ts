@@ -4,6 +4,7 @@
 
 import { Events, type ChatInputCommandInteraction, type Interaction } from 'discord.js';
 import type { BotCommand, InteractionCreateEvent } from '../../types';
+import { createErrorLogObject } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
 
 const logger = getLogger('InteractionCreate');
@@ -29,8 +30,7 @@ export const interactionCreateEvent: InteractionCreateEvent = {
     } catch (error) {
       logger.error('Error executing command', {
         command: interaction.commandName,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
+        ...createErrorLogObject(error),
       });
 
       const errorMessage = {

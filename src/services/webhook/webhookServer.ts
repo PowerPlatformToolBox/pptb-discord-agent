@@ -5,13 +5,14 @@
 import type { Client } from 'discord.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { loadWebhookConfig } from '../../config/webhook';
+import { getConfig } from '../../config/config';
 import type { GitHubWebhookPayload } from '../../types/webhook';
-import { getLogger } from '../../utils/logger';
+import { createErrorLogObject } from '../../utils/errorHelper';
+import { LoggerFactory } from '../../utils/logger';
 
 export class WebhookServer {
-  private readonly logger = getLogger();
-  private readonly config = loadWebhookConfig();
+  private readonly logger = LoggerFactory.forService('WebhookServer');
+  private readonly config = getConfig().webhook;
   private server: ReturnType<typeof createServer> | null = null;
   private discordClient: Client | null = null;
 
@@ -24,7 +25,15 @@ export class WebhookServer {
   }
 
   public start(): void {
-    this.server = createServer((req, res) => void this.handleRequest(req, res));
+    this.server = createServer((req, res) => {
+      // Set request timeout to 30 seconds
+      req.setTimeout(30000, () => {
+        this.logger.warn('Request timeout', { url: req.url });
+        res.writeHead(408, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request timeout' }));
+      });
+      void this.handleRequest(req, res);
+    });
 
     this.server.listen(this.config.port, () => {
       this.logger.info('Webhook server started', { port: this.config.port });
@@ -59,12 +68,35 @@ export class WebhookServer {
       return;
     }
 
+    // Request body size limit (10MB for GitHub webhooks)
+    const MAX_BODY_SIZE = 10 * 1024 * 1024;
     let body = '';
+    let bodySize = 0;
+    let requestTerminated = false;
+
     req.on('data', (chunk) => {
+      if (requestTerminated) {
+        return; // Ignore further data if request was terminated
+      }
+
+      bodySize += chunk.length;
+      if (bodySize > MAX_BODY_SIZE) {
+        this.logger.warn('Request body too large', { size: bodySize });
+        requestTerminated = true;
+        req.destroy();
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request body too large' }));
+        return;
+      }
       body += chunk.toString();
     });
 
     req.on('end', async () => {
+      // Skip processing if request was terminated due to size limit
+      if (requestTerminated) {
+        return;
+      }
+
       try {
         // Verify signature if secret is configured
         if (this.config.secret) {
@@ -95,8 +127,7 @@ export class WebhookServer {
           } catch (handlerError) {
             this.logger.error('Handler threw error', {
               event,
-              error: handlerError instanceof Error ? handlerError.message : String(handlerError),
-              stack: handlerError instanceof Error ? handlerError.stack : undefined,
+              ...createErrorLogObject(handlerError),
             });
             throw handlerError;
           }
@@ -108,7 +139,7 @@ export class WebhookServer {
         res.end(JSON.stringify({ success: true }));
       } catch (error) {
         this.logger.error('Webhook processing error', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          ...createErrorLogObject(error),
         });
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Internal server error' }));
