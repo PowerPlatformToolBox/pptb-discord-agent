@@ -77,7 +77,7 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
   }
 
   // Skip posting to Discord for pre-releases
-  if (release.prerelease) {
+  if (isInsiderRelease) {
     logger.debug('Skipping Discord post for pre-release', { tag: release.tag_name });
     return;
   }
