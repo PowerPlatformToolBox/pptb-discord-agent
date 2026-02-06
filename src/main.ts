@@ -9,6 +9,7 @@ import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
 import { handleProjectItem } from './services/webhook/handlers/projectItem';
 import { handleRelease } from './services/webhook/handlers/release';
+import { handleStar } from './services/webhook/handlers/star';
 import { createWebhookServer } from './services/webhook/webhookServer';
 import type { BotCommand, BotEvent } from './types';
 import type { GitHubWebhookPayload } from './types/webhook';
@@ -102,6 +103,11 @@ async function main(): Promise<void> {
     // Handle releases
     webhookHandlers.set('release', async (payload) => {
       await handleRelease(payload, client);
+    });
+
+    // Handle stars
+    webhookHandlers.set('star', async (payload) => {
+      await handleStar(payload, client);
     });
 
     // Create and start webhook server

@@ -32,6 +32,9 @@ export interface WebhookConfig {
   secret?: string;
   projectThreadChannel: string;
   releaseAnnouncementChannel: string;
+  starsVoiceChannel: string;
+  releaseVoiceChannel: string;
+  insiderVoiceChannel: string;
   watchedRepositories: string[];
   watchedLabels: string[];
 }
@@ -63,6 +66,9 @@ export interface EnvironmentVariables {
   WEBHOOK_SECRET?: string;
   PROJECT_THREAD_CHANNEL_ID: string;
   RELEASE_CHANNEL_ID: string;
+  STARS_VOICE_CHANNEL_ID: string;
+  RELEASE_VOICE_CHANNEL_ID: string;
+  INSIDER_VOICE_CHANNEL_ID: string;
   WATCHED_REPOSITORIES: string;
   WATCHED_LABELS: string;
 }

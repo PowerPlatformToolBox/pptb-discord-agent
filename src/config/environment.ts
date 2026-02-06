@@ -26,6 +26,10 @@ const environmentSchema = z.object({
   WEBHOOK_SECRET: z.string().optional(),
   PROJECT_THREAD_CHANNEL_ID: z.string().min(1, 'PROJECT_THREAD_CHANNEL_ID is required'),
   RELEASE_CHANNEL_ID: z.string().min(1, 'RELEASE_CHANNEL_ID is required'),
+  // Voice channel IDs for stats updates
+  STARS_VOICE_CHANNEL_ID: z.string().min(1, 'STARS_VOICE_CHANNEL_ID is required'),
+  RELEASE_VOICE_CHANNEL_ID: z.string().min(1, 'RELEASE_VOICE_CHANNEL_ID is required'),
+  INSIDER_VOICE_CHANNEL_ID: z.string().min(1, 'INSIDER_VOICE_CHANNEL_ID is required'),
   // Comma-separated lists. If empty after parsing, defaults will be applied in config.ts
   WATCHED_REPOSITORIES: z.string().default('desktop-app'),
   WATCHED_LABELS: z.string().default('DiscordDiscussion'),

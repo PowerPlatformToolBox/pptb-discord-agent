@@ -8,6 +8,7 @@ import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
 import { LoggerFactory } from '../../../utils/logger';
+import { getVoiceChannelService } from '../../discord/voiceChannelService';
 import { createDesktopAppReleaseEmbed } from '../embeds';
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
@@ -31,9 +32,9 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
 
   const release = payload.release;
 
-  // Skip pre-releases and drafts
-  if (release.draft || release.prerelease) {
-    logger.debug('Skipping draft or pre-release', { tag: release.tag_name });
+  // Skip drafts
+  if (release.draft) {
+    logger.debug('Skipping draft release', { tag: release.tag_name });
     return;
   }
 
@@ -43,6 +44,41 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
       repo: payload.repository.name,
       watched: config.watchedRepositories,
     });
+    return;
+  }
+
+  // Determine if this is an insider release (pre-release)
+  const isInsiderRelease = release.prerelease;
+  const version = release.tag_name;
+
+  // Update voice channels based on release type
+  try {
+    const voiceChannelService = getVoiceChannelService();
+    
+    if (isInsiderRelease) {
+      // Update insider channel for pre-releases
+      await voiceChannelService.updateInsiderChannel(client, config.insiderVoiceChannel, version);
+      logger.info('Updated insider voice channel', {
+        repo: payload.repository.name,
+        version,
+      });
+    } else {
+      // Update release channel for stable releases
+      await voiceChannelService.updateReleaseChannel(client, config.releaseVoiceChannel, version);
+      logger.info('Updated release voice channel', {
+        repo: payload.repository.name,
+        version,
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to update voice channels', {
+      error: getErrorMessage(error),
+    });
+  }
+
+  // Skip posting to Discord for pre-releases
+  if (release.prerelease) {
+    logger.debug('Skipping Discord post for pre-release', { tag: release.tag_name });
     return;
   }
 
