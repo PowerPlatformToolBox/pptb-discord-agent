@@ -87,7 +87,7 @@ export class VoiceChannelService {
 		channelId: string,
 		version: string
 	): Promise<boolean> {
-		const channelName = `🚀 Release: ${version}`;
+		const channelName = `Release: ${version}`;
 		return this.updateChannelName(client, channelId, channelName);
 	}
 
