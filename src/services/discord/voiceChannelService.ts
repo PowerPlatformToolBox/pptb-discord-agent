@@ -99,7 +99,7 @@ export class VoiceChannelService {
 		channelId: string,
 		version: string
 	): Promise<boolean> {
-		const channelName = `🔬 Insider: ${version}`;
+		const channelName = `Insider: ${version}`;
 		return this.updateChannelName(client, channelId, channelName);
 	}
 }

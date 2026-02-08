@@ -25,15 +25,6 @@ export async function handleStar(payload: GitHubWebhookPayload, client: Client):
 		return;
 	}
 
-	// Check if repository is in watched list
-	if (!config.watchedRepositories.includes(payload.repository.name)) {
-		logger.debug('Skipping unwatched repository', {
-			repo: payload.repository.name,
-			watched: config.watchedRepositories,
-		});
-		return;
-	}
-
 	// Get the current star count from the payload
 	const starCount = payload.repository.stargazers_count;
 	if (starCount === undefined) {

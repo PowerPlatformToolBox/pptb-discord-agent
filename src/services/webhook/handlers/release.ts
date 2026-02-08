@@ -38,15 +38,6 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     return;
   }
 
-  // Check if repository is in watched list
-  if (!config.watchedRepositories.includes(payload.repository.name)) {
-    logger.debug('Skipping unwatched repository', {
-      repo: payload.repository.name,
-      watched: config.watchedRepositories,
-    });
-    return;
-  }
-
   // Determine if this is an insider release (pre-release)
   const isInsiderRelease = release.prerelease;
   const version = release.tag_name;
