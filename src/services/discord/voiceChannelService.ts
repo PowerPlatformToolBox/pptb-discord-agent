@@ -75,7 +75,7 @@ export class VoiceChannelService {
 		channelId: string,
 		starCount: number
 	): Promise<boolean> {
-		const channelName = `⭐ ${starCount.toLocaleString()}`;
+		const channelName = `⭐ ${starCount.toLocaleString('en-US')}`;
 		return this.updateChannelName(client, channelId, channelName);
 	}
 
