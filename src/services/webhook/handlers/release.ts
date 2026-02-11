@@ -47,19 +47,49 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     const voiceChannelService = getVoiceChannelService();
     
     if (isInsiderRelease) {
-      // Update insider channel for pre-releases
-      await voiceChannelService.updateInsiderChannel(client, config.insiderVoiceChannel, version);
-      logger.info('Updated insider voice channel', {
-        repo: payload.repository.name,
-        version,
-      });
+      // Update insider channel for pre-releases (if configured)
+      if (config.insiderVoiceChannel) {
+        const success = await voiceChannelService.updateInsiderChannel(
+          client,
+          config.insiderVoiceChannel,
+          version
+        );
+        if (success) {
+          logger.info('Updated insider voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        } else {
+          logger.warn('Failed to update insider voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        }
+      } else {
+        logger.debug('Insider voice channel not configured, skipping update');
+      }
     } else {
-      // Update release channel for stable releases
-      await voiceChannelService.updateReleaseChannel(client, config.releaseVoiceChannel, version);
-      logger.info('Updated release voice channel', {
-        repo: payload.repository.name,
-        version,
-      });
+      // Update release channel for stable releases (if configured)
+      if (config.releaseVoiceChannel) {
+        const success = await voiceChannelService.updateReleaseChannel(
+          client,
+          config.releaseVoiceChannel,
+          version
+        );
+        if (success) {
+          logger.info('Updated release voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        } else {
+          logger.warn('Failed to update release voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        }
+      } else {
+        logger.debug('Release voice channel not configured, skipping update');
+      }
     }
   } catch (error) {
     logger.error('Failed to update voice channels', {
