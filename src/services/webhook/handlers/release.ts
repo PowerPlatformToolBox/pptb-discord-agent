@@ -8,6 +8,7 @@ import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
 import { LoggerFactory } from '../../../utils/logger';
+import { getVoiceChannelService } from '../../discord/voiceChannelService';
 import { createDesktopAppReleaseEmbed } from '../embeds';
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
@@ -31,18 +32,74 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
 
   const release = payload.release;
 
-  // Skip pre-releases and drafts
-  if (release.draft || release.prerelease) {
-    logger.debug('Skipping draft or pre-release', { tag: release.tag_name });
+  // Skip drafts
+  if (release.draft) {
+    logger.debug('Skipping draft release', { tag: release.tag_name });
     return;
   }
 
-  // Check if repository is in watched list
-  if (!config.watchedRepositories.includes(payload.repository.name)) {
-    logger.debug('Skipping unwatched repository', {
-      repo: payload.repository.name,
-      watched: config.watchedRepositories,
+  // Determine if this is an insider release (pre-release)
+  const isInsiderRelease = release.prerelease;
+  const version = release.tag_name;
+
+  // Update voice channels based on release type
+  try {
+    const voiceChannelService = getVoiceChannelService();
+    
+    if (isInsiderRelease) {
+      // Update insider channel for pre-releases (if configured)
+      if (config.insiderVoiceChannel) {
+        const success = await voiceChannelService.updateInsiderChannel(
+          client,
+          config.insiderVoiceChannel,
+          version
+        );
+        if (success) {
+          logger.info('Updated insider voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        } else {
+          logger.warn('Failed to update insider voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        }
+      } else {
+        logger.debug('Insider voice channel not configured, skipping update');
+      }
+    } else {
+      // Update release channel for stable releases (if configured)
+      if (config.releaseVoiceChannel) {
+        const success = await voiceChannelService.updateReleaseChannel(
+          client,
+          config.releaseVoiceChannel,
+          version
+        );
+        if (success) {
+          logger.info('Updated release voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        } else {
+          logger.warn('Failed to update release voice channel', {
+            repo: payload.repository.name,
+            version,
+          });
+        }
+      } else {
+        logger.debug('Release voice channel not configured, skipping update');
+      }
+    }
+  } catch (error) {
+    logger.error('Failed to update voice channels', {
+      error: getErrorMessage(error),
     });
+  }
+
+  // Skip posting to Discord for pre-releases
+  if (isInsiderRelease) {
+    logger.debug('Skipping Discord post for pre-release', { tag: release.tag_name });
     return;
   }
 

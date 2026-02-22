@@ -42,6 +42,9 @@ export function loadConfig(): AppConfig {
         secret: env.WEBHOOK_SECRET,
         projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
         releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
+        starsVoiceChannel: env.STARS_VOICE_CHANNEL_ID,
+        releaseVoiceChannel: env.RELEASE_VOICE_CHANNEL_ID,
+        insiderVoiceChannel: env.INSIDER_VOICE_CHANNEL_ID,
         watchedRepositories: (() => {
           const parsed = env.WATCHED_REPOSITORIES.split(',')
             .map((r) => r.trim())
