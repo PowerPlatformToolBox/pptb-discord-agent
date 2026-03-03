@@ -1,15 +1,99 @@
 /**
  * GitHub release webhook handler
  */
-import { type Client, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } from 'discord.js';
+import { type Client, ChannelType } from 'discord.js';
 import { getConfig } from '../../../config/config';
-import { PLATFORM_EMOJIS } from '../../../constants/discord';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
 import { LoggerFactory } from '../../../utils/logger';
 import { getVoiceChannelService } from '../../discord/voiceChannelService';
-import { createDesktopAppReleaseEmbed } from '../embeds';
+
+/**
+ * Extract the "What's New" (or "What's Changed") section from the release body.
+ * Returns the line items from that section, or an empty array if not found.
+ */
+function extractWhatsNewSection(body: string): string[] {
+  const lines = body.split('\n');
+  let inSection = false;
+  const items: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Detect "What's New" or "What's Changed" section headers
+    if (/^#{1,3}\s+What'?s\s+(New|Changed)/i.test(trimmed)) {
+      inSection = true;
+      continue;
+    }
+
+    // If we hit another section header while in the section, stop
+    if (inSection && /^#{1,3}\s+/.test(trimmed)) {
+      break;
+    }
+
+    // Collect list items within the section
+    if (inSection && (trimmed.startsWith('- ') || trimmed.startsWith('* '))) {
+      items.push(trimmed);
+    }
+  }
+
+  return items;
+}
+
+/**
+ * Convert PR references in text to hyperlinked format.
+ * Handles:
+ *   - Full URLs: https://github.com/org/repo/pull/123 → (#[123](url))
+ *   - Short references: #123 → (#[123](repo_url/pull/123))
+ */
+function hyperlinkPRReferences(text: string, repoUrl: string): string {
+  // First, convert full GitHub PR URLs to short hyperlinked format
+  let result = text.replace(
+    /https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/(\d+)/g,
+    (fullUrl, prNumber: string) => `#[${prNumber}](${fullUrl})`
+  );
+
+  // Then, convert remaining bare #NUMBER references (not already inside [...])
+  result = result.replace(
+    /(?<!\[)#(\d+)(?!\])/g,
+    (_match, prNumber: string) => `#[${prNumber}](${repoUrl}/pull/${prNumber})`
+  );
+
+  return result;
+}
+
+/**
+ * Build the Discord message for a release announcement.
+ */
+function formatReleaseMessage(
+  release: NonNullable<GitHubWebhookPayload['release']>,
+  repoUrl: string,
+  isInsiderRelease: boolean
+): string {
+  const version = release.tag_name.replace(/^v/, '');
+  const header = isInsiderRelease
+    ? `# :construction:  Insider Pre-Release - ${version}`
+    : `# :rocket:  Release - ${version}`;
+
+  const whatsNewItems = extractWhatsNewSection(release.body || '');
+
+  const parts: string[] = [header];
+
+  if (whatsNewItems.length > 0) {
+    parts.push('');
+    parts.push('## :clipboard: What\'s New');
+    parts.push('');
+    for (const item of whatsNewItems) {
+      parts.push(hyperlinkPRReferences(item, repoUrl));
+    }
+  }
+
+  parts.push('');
+  parts.push(release.html_url);
+
+  return parts.join('\n');
+}
 
 export async function handleRelease(payload: GitHubWebhookPayload, client: Client): Promise<void> {
   const logger = LoggerFactory.forWebhook('Release');
@@ -21,7 +105,7 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     repo: payload.repository?.name,
   });
 
-  // Only handle published releases (not drafts or pre-releases)
+  // Only handle published releases
   if (payload.action !== 'published' || !payload.release) {
     logger.info('Skipping release', {
       action: payload.action,
@@ -47,7 +131,6 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     const voiceChannelService = getVoiceChannelService();
     
     if (isInsiderRelease) {
-      // Update insider channel for pre-releases (if configured)
       if (config.insiderVoiceChannel) {
         const success = await voiceChannelService.updateInsiderChannel(
           client,
@@ -69,7 +152,6 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
         logger.debug('Insider voice channel not configured, skipping update');
       }
     } else {
-      // Update release channel for stable releases (if configured)
       if (config.releaseVoiceChannel) {
         const success = await voiceChannelService.updateReleaseChannel(
           client,
@@ -97,12 +179,6 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
     });
   }
 
-  // Skip posting to Discord for pre-releases
-  if (isInsiderRelease) {
-    logger.debug('Skipping Discord post for pre-release', { tag: release.tag_name });
-    return;
-  }
-
   try {
     const channelCache = getChannelCache();
     const channel = await channelCache.fetch(client, config.releaseAnnouncementChannel);
@@ -125,132 +201,14 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
       return;
     }
 
-    // Use the embed factory to create the embed
-    const { embed, content } = createDesktopAppReleaseEmbed({
-      release,
-      payload,
-    });
+    const message = formatReleaseMessage(release, payload.repository.html_url, isInsiderRelease);
 
-    // Create download buttons for different platforms
-    const buttons: ActionRowBuilder<ButtonBuilder>[] = [];
-
-    if (release.assets && release.assets.length > 0) {
-      const downloadButtons: ButtonBuilder[] = [];
-
-      // Helper to check for platform token at word boundaries to avoid false positives
-      const hasPlatformToken = (filename: string, token: string): boolean => {
-        // Match token at start/end or separated by dot/underscore/hyphen
-        const pattern = new RegExp(`(?:^|[._-])${token}(?:[._-]|$)`, 'i');
-        return pattern.test(filename);
-      };
-
-      // Single-pass asset scanning for efficiency
-      // Platform detection precedence: Windows > macOS > Linux
-      // Each asset is assigned to at most one platform
-      const platformAssets = {
-        windows: null as typeof release.assets[0] | null,
-        mac: null as typeof release.assets[0] | null,
-        linux: null as typeof release.assets[0] | null,
-      };
-
-      for (const asset of release.assets) {
-        const nameLower = asset.name.toLowerCase();
-
-        // Windows installer
-        if (
-          !platformAssets.windows &&
-          (nameLower.endsWith('.exe') ||
-            hasPlatformToken(nameLower, 'win') ||
-            hasPlatformToken(nameLower, 'windows'))
-        ) {
-          platformAssets.windows = asset;
-        }
-        // macOS installer
-        else if (
-          !platformAssets.mac &&
-          (hasPlatformToken(nameLower, 'mac') ||
-            hasPlatformToken(nameLower, 'darwin') ||
-            nameLower.endsWith('.dmg'))
-        ) {
-          platformAssets.mac = asset;
-        }
-        // Linux AppImage
-        else if (
-          !platformAssets.linux &&
-          (nameLower.endsWith('.appimage') || hasPlatformToken(nameLower, 'linux'))
-        ) {
-          platformAssets.linux = asset;
-        }
-
-        // Exit early if all platforms found
-        if (platformAssets.windows && platformAssets.mac && platformAssets.linux) {
-          break;
-        }
-      }
-
-      // Create Windows button
-      if (platformAssets.windows) {
-        const winButton = new ButtonBuilder()
-          .setLabel('Windows')
-          .setURL(platformAssets.windows.browser_download_url)
-          .setStyle(ButtonStyle.Link);
-
-        try {
-          winButton.setEmoji(PLATFORM_EMOJIS.WINDOWS);
-        } catch {
-          // If custom emoji fails, just use label without emoji
-        }
-
-        downloadButtons.push(winButton);
-      }
-
-      // Create macOS button
-      if (platformAssets.mac) {
-        const macButton = new ButtonBuilder()
-          .setLabel('macOS')
-          .setURL(platformAssets.mac.browser_download_url)
-          .setStyle(ButtonStyle.Link);
-
-        try {
-          macButton.setEmoji(PLATFORM_EMOJIS.MACOS);
-        } catch {
-          // If custom emoji fails, just use label without emoji
-        }
-
-        downloadButtons.push(macButton);
-      }
-
-      // Create Linux button
-      if (platformAssets.linux) {
-        const linuxButton = new ButtonBuilder()
-          .setLabel('Linux')
-          .setURL(platformAssets.linux.browser_download_url)
-          .setStyle(ButtonStyle.Link);
-
-        try {
-          linuxButton.setEmoji(PLATFORM_EMOJIS.LINUX);
-        } catch {
-          // If custom emoji fails, just use label without emoji
-        }
-
-        downloadButtons.push(linuxButton);
-      }
-
-      if (downloadButtons.length > 0) {
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(...downloadButtons);
-        buttons.push(row);
-      }
-    }
-
-    await channel.send({
-      content,
-      embeds: [embed],
-      components: buttons,
-    });
+    await channel.send({ content: message });
 
     logger.info('Posted release announcement', {
       tag: release.tag_name,
       repo: payload.repository.name,
+      isInsiderRelease,
     });
   } catch (error) {
     logger.error('Failed to post release announcement', {

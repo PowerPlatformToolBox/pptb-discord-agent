@@ -12,13 +12,6 @@ export interface BaseEmbedParams {
 }
 
 /**
- * Parameters for release embed factory
- */
-export interface ReleaseEmbedParams extends BaseEmbedParams {
-  release: NonNullable<GitHubWebhookPayload['release']>;
-}
-
-/**
  * Parameters for thread starter embed factory
  */
 export interface ThreadStarterEmbedParams extends BaseEmbedParams {

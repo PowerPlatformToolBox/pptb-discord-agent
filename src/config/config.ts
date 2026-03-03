@@ -61,9 +61,6 @@ export function loadConfig(): AppConfig {
         })(),
       },
       nodeEnv: env.NODE_ENV ?? 'development',
-      sentry: {
-        dsn: env.SENTRY_DSN,
-      },
     };
 
     // Logger is initialized here after config is created

@@ -19,7 +19,6 @@ const environmentSchema = z.object({
   REACTION_EMOJI: z.string().default('📝'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  SENTRY_DSN: z.string().optional(),
   ENABLE_FILE_LOGS: z.enum(['true', 'false']).optional().default('false'),
   LOG_DIR: z.string().optional().default('./logs'),
   WEBHOOK_PORT: z.coerce.number().default(3000),

@@ -114,7 +114,6 @@ export class LoggerFactory {
 ✅ **Console-only by default** - No file I/O overhead
 ✅ **Singleton pattern** - One logger instance shared
 ✅ **Child loggers cached** - No redundant creation
-✅ **Sentry integration** - Critical errors only
 ✅ **Minimal memory** - ~100 bytes per child logger
 
 ### Usage Patterns (Standardized)
@@ -152,7 +151,6 @@ Per user comment 2719286103:
 - ✅ Values efficiency and low RAM usage
 - ✅ Winston logging (already used, confirmed efficient)
 - ✅ Console-only logging by default
-- ✅ Sentry integration for critical errors only
 - ✅ No file I/O overhead unless explicitly enabled
 
 ### Files Updated
