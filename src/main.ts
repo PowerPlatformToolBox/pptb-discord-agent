@@ -16,7 +16,6 @@ import type { GitHubWebhookPayload } from './types/webhook';
 import { createErrorLogObject } from './utils/errorHelper';
 import { LoggerFactory } from './utils/logger';
 import { AppPaths } from './utils/pathCache';
-import { initializeSentry, captureException, addBreadcrumb } from './utils/sentryHelper';
 
 declare module 'discord.js' {
   interface Client {
@@ -28,9 +27,6 @@ async function main(): Promise<void> {
   try {
     const config = loadConfig();
     const logger = LoggerFactory.generic();
-
-    // Initialize Sentry for error tracking (if DSN provided)
-    initializeSentry(config.sentry?.dsn);
 
     logger.info('Starting PPTB Discord Assistant', {
       nodeEnv: config.nodeEnv,
@@ -121,14 +117,10 @@ async function main(): Promise<void> {
     // Global error handlers
     process.on('unhandledRejection', (error: Error) => {
       logger.error('Unhandled promise rejection', createErrorLogObject(error));
-      captureException(error, { type: 'unhandledRejection' });
-      addBreadcrumb('Unhandled rejection', 'error');
     });
 
     process.on('uncaughtException', (error: Error) => {
       logger.error('Uncaught exception', createErrorLogObject(error));
-      captureException(error, { type: 'uncaughtException' });
-      addBreadcrumb('Uncaught exception', 'error');
       process.exit(1);
     });
 
@@ -144,7 +136,6 @@ async function main(): Promise<void> {
   } catch (error) {
     const logger = LoggerFactory.generic();
     logger.error('Failed to start bot', createErrorLogObject(error));
-    captureException(error, { stage: 'startup' });
     process.exit(1);
   }
 }

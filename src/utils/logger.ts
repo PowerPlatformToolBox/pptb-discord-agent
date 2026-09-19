@@ -6,7 +6,6 @@
  * - File logging explicitly disabled unless ENABLE_FILE_LOGS=true
  * - Singleton pattern ensures one logger instance
  * - Child loggers cached per module name
- * - Sentry integration for critical errors only
  *
  * **Usage Patterns:**
  * - Services/Classes: Use module name for better tracing

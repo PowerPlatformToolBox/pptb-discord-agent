@@ -29,7 +29,6 @@ export interface AppConfig {
   logging: LoggingConfig;
   reaction: ReactionConfig;
   webhook: WebhookConfig;  // ← Consolidated here
-  sentry?: SentryConfig;
   nodeEnv: 'development' | 'production' | 'test';
 }
 ```

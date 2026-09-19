@@ -334,7 +334,7 @@ All errors are logged via Winston logger with:
 ## Developer & Build
 
 • Marketplace shows tool versions
-• Structured logging via Sentry
+• Structured logging via Winston
 • Modular renderer architecture
 
 ## Notes
