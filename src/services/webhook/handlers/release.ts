@@ -7,7 +7,6 @@ import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
 import { LoggerFactory } from '../../../utils/logger';
-import { getVoiceChannelService } from '../../discord/voiceChannelService';
 
 /**
  * Extract the "What's New" (or "What's Changed") section from the release body.
@@ -124,60 +123,6 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
 
   // Determine if this is an insider release (pre-release)
   const isInsiderRelease = release.prerelease;
-  const version = release.tag_name;
-
-  // Update voice channels based on release type
-  try {
-    const voiceChannelService = getVoiceChannelService();
-    
-    if (isInsiderRelease) {
-      if (config.insiderVoiceChannel) {
-        const success = await voiceChannelService.updateInsiderChannel(
-          client,
-          config.insiderVoiceChannel,
-          version
-        );
-        if (success) {
-          logger.info('Updated insider voice channel', {
-            repo: payload.repository.name,
-            version,
-          });
-        } else {
-          logger.warn('Failed to update insider voice channel', {
-            repo: payload.repository.name,
-            version,
-          });
-        }
-      } else {
-        logger.debug('Insider voice channel not configured, skipping update');
-      }
-    } else {
-      if (config.releaseVoiceChannel) {
-        const success = await voiceChannelService.updateReleaseChannel(
-          client,
-          config.releaseVoiceChannel,
-          version
-        );
-        if (success) {
-          logger.info('Updated release voice channel', {
-            repo: payload.repository.name,
-            version,
-          });
-        } else {
-          logger.warn('Failed to update release voice channel', {
-            repo: payload.repository.name,
-            version,
-          });
-        }
-      } else {
-        logger.debug('Release voice channel not configured, skipping update');
-      }
-    }
-  } catch (error) {
-    logger.error('Failed to update voice channels', {
-      error: getErrorMessage(error),
-    });
-  }
 
   try {
     const channelCache = getChannelCache();

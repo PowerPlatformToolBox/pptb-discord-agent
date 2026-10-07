@@ -31,11 +31,8 @@ export function loadConfig(): AppConfig {
         org: env.GITHUB_ORG,
       },
       logging: {
-        level: env.LOG_LEVEL ?? 'info',
+        level: env.LOG_LEVEL,
         channelId: env.LOG_CHANNEL_ID,
-      },
-      reaction: {
-        logEmoji: env.REACTION_EMOJI ?? '📝',
       },
       webhook: {
         port: env.WEBHOOK_PORT,
@@ -43,8 +40,6 @@ export function loadConfig(): AppConfig {
         projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
         releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
         starsVoiceChannel: env.STARS_VOICE_CHANNEL_ID,
-        releaseVoiceChannel: env.RELEASE_VOICE_CHANNEL_ID,
-        insiderVoiceChannel: env.INSIDER_VOICE_CHANNEL_ID,
         watchedRepositories: (() => {
           const parsed = env.WATCHED_REPOSITORIES.split(',')
             .map((r) => r.trim())
@@ -60,7 +55,7 @@ export function loadConfig(): AppConfig {
           return parsed.length > 0 ? parsed : ['DiscordDiscussion'];
         })(),
       },
-      nodeEnv: env.NODE_ENV ?? 'development',
+      nodeEnv: env.NODE_ENV,
     };
 
     // Logger is initialized here after config is created

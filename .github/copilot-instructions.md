@@ -34,14 +34,17 @@ This repository is a TypeScript Discord bot (discord.js v14+) used by PowerPlatf
 - **GITHUB_TOKEN** (required)
 - **GITHUB_ORG** (required)
 - **LOG_CHANNEL_ID** (required)
-- **REACTION_EMOJI** (optional, default `📝`)
-- **WEBHOOK_PORT** (optional, default `3000`)
-- **WEBHOOK_SECRET** (required for webhook security)
-- **PROJECT_THREAD_CHANNEL_ID** (optional) — channel for discussion threads
-- **RELEASE_CHANNEL_ID** (optional) — channel for release announcements
-- **PROJECT_DISCUSSION_LABEL** (optional, default `DiscordDiscussion`)
-- **NODE_ENV** (optional, default `development`)
-- **LOG_LEVEL** (optional, default `info`)
+- **STARS_VOICE_CHANNEL_ID** (required)
+- **WEBHOOK_PORT** (required)
+- **WEBHOOK_SECRET** (required)
+- **PROJECT_THREAD_CHANNEL_ID** (required)
+- **RELEASE_CHANNEL_ID** (required)
+- **WATCHED_REPOSITORIES** (required)
+- **WATCHED_LABELS** (required)
+- **NODE_ENV** (required)
+- **LOG_LEVEL** (required)
+- **ENABLE_FILE_LOGS** (required)
+- **LOG_DIR** (required)
 
 ## Project conventions (non-negotiable)
 

@@ -9,29 +9,28 @@ import type { EnvironmentVariables } from '../types';
 // Load environment variables
 dotenvConfig();
 
+const requiredString = (name: string): z.ZodString => z.string().min(1, `${name} is required`);
+
+// Every variable is required: no defaults, no optionals
 const environmentSchema = z.object({
-  DISCORD_BOT_TOKEN: z.string().min(1, 'DISCORD_BOT_TOKEN is required'),
-  DISCORD_CLIENT_ID: z.string().min(1, 'DISCORD_CLIENT_ID is required'),
-  DISCORD_GUILD_ID: z.string().optional(),
-  GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required'),
-  GITHUB_ORG: z.string().default('PowerPlatformToolBox'),
-  LOG_CHANNEL_ID: z.string().min(1, 'LOG_CHANNEL_ID is required'),
-  REACTION_EMOJI: z.string().default('📝'),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  ENABLE_FILE_LOGS: z.enum(['true', 'false']).optional().default('false'),
-  LOG_DIR: z.string().optional().default('./logs'),
-  WEBHOOK_PORT: z.coerce.number().default(3000),
-  WEBHOOK_SECRET: z.string().optional(),
-  PROJECT_THREAD_CHANNEL_ID: z.string().min(1, 'PROJECT_THREAD_CHANNEL_ID is required'),
-  RELEASE_CHANNEL_ID: z.string().min(1, 'RELEASE_CHANNEL_ID is required'),
-  // Voice channel IDs for stats updates (optional; empty string means "not configured")
-  STARS_VOICE_CHANNEL_ID: z.string().optional().default(''),
-  RELEASE_VOICE_CHANNEL_ID: z.string().optional().default(''),
-  INSIDER_VOICE_CHANNEL_ID: z.string().optional().default(''),
-  // Comma-separated lists. If empty after parsing, defaults will be applied in config.ts
-  WATCHED_REPOSITORIES: z.string().default('desktop-app'),
-  WATCHED_LABELS: z.string().default('DiscordDiscussion'),
+  DISCORD_BOT_TOKEN: requiredString('DISCORD_BOT_TOKEN'),
+  DISCORD_CLIENT_ID: requiredString('DISCORD_CLIENT_ID'),
+  DISCORD_GUILD_ID: requiredString('DISCORD_GUILD_ID'),
+  GITHUB_TOKEN: requiredString('GITHUB_TOKEN'),
+  GITHUB_ORG: requiredString('GITHUB_ORG'),
+  LOG_CHANNEL_ID: requiredString('LOG_CHANNEL_ID'),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']),
+  ENABLE_FILE_LOGS: z.enum(['true', 'false']),
+  LOG_DIR: requiredString('LOG_DIR'),
+  WEBHOOK_PORT: z.coerce.number().int().positive(),
+  WEBHOOK_SECRET: requiredString('WEBHOOK_SECRET'),
+  PROJECT_THREAD_CHANNEL_ID: requiredString('PROJECT_THREAD_CHANNEL_ID'),
+  RELEASE_CHANNEL_ID: requiredString('RELEASE_CHANNEL_ID'),
+  STARS_VOICE_CHANNEL_ID: requiredString('STARS_VOICE_CHANNEL_ID'),
+  // Comma-separated lists
+  WATCHED_REPOSITORIES: requiredString('WATCHED_REPOSITORIES'),
+  WATCHED_LABELS: requiredString('WATCHED_LABELS'),
 });
 
 /**
