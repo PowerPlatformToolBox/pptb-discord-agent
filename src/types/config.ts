@@ -16,7 +16,6 @@ export interface GitHubConfig {
 
 export interface LoggingConfig {
   level: 'debug' | 'info' | 'warn' | 'error';
-  channelId: string;
 }
 
 export interface WebhookConfig {
@@ -43,7 +42,6 @@ export interface EnvironmentVariables {
   DISCORD_GUILD_ID: string;
   GITHUB_TOKEN: string;
   GITHUB_ORG: string;
-  LOG_CHANNEL_ID: string;
   NODE_ENV: 'development' | 'production' | 'test';
   LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
   ENABLE_FILE_LOGS: 'true' | 'false';

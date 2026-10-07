@@ -85,7 +85,6 @@ GITHUB_TOKEN=your_github_token
 GITHUB_ORG=PowerPlatformToolBox
 
 # Bot Configuration
-LOG_CHANNEL_ID=your_logging_channel_id
 STARS_VOICE_CHANNEL_ID=your_stars_voice_channel_id
 
 # Webhook Configuration
@@ -110,7 +109,6 @@ Notes on environment variables
 - `DISCORD_GUILD_ID`: (required) The ID of the Discord server.
 - `GITHUB_TOKEN`: Personal access token with repo permissions (required for GitHub API calls).
 - `GITHUB_ORG`: Organization used when creating/querying repos (required).
-- `LOG_CHANNEL_ID`: Channel ID where structured logs/alerts are posted (required).
 - `WEBHOOK_PORT`: Port the webhook server listens on when enabled (required).
 - `WEBHOOK_SECRET`: HMAC secret used to validate GitHub webhook payloads (required for webhook security).
 - `PROJECT_THREAD_CHANNEL_ID`: Channel ID where auto-created discussion threads are created.

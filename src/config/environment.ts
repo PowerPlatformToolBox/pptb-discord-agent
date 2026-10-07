@@ -18,7 +18,6 @@ const environmentSchema = z.object({
   DISCORD_GUILD_ID: requiredString('DISCORD_GUILD_ID'),
   GITHUB_TOKEN: requiredString('GITHUB_TOKEN'),
   GITHUB_ORG: requiredString('GITHUB_ORG'),
-  LOG_CHANNEL_ID: requiredString('LOG_CHANNEL_ID'),
   NODE_ENV: z.enum(['development', 'production', 'test']),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']),
   ENABLE_FILE_LOGS: z.enum(['true', 'false']),

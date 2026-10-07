@@ -33,7 +33,6 @@ This repository is a TypeScript Discord bot (discord.js v14+) used by PowerPlatf
 - **DISCORD_GUILD_ID** (required)
 - **GITHUB_TOKEN** (required)
 - **GITHUB_ORG** (required)
-- **LOG_CHANNEL_ID** (required)
 - **STARS_VOICE_CHANNEL_ID** (required)
 - **WEBHOOK_PORT** (required)
 - **WEBHOOK_SECRET** (required)

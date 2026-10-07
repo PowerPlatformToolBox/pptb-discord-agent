@@ -32,7 +32,6 @@ export function loadConfig(): AppConfig {
       },
       logging: {
         level: env.LOG_LEVEL,
-        channelId: env.LOG_CHANNEL_ID,
       },
       webhook: {
         port: env.WEBHOOK_PORT,
