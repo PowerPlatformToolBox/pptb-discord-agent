@@ -23,5 +23,4 @@ export const CONSTANTS = {
 
   // Timeouts
   COMMAND_TIMEOUT_MS: 30000,
-  REACTION_FETCH_TIMEOUT_MS: 5000,
 } as const;
