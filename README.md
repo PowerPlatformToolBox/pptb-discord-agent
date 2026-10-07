@@ -6,7 +6,6 @@
 
 TypeScript Discord bot featuring:
 
-- **Message reaction logging** to dedicated Discord channel
 - **GitHub issue creation** via slash commands
 - **Automated discussion threads** for GitHub project items
 - **Release announcements** for new versions
@@ -17,7 +16,6 @@ TypeScript Discord bot featuring:
 
 ### Discord Integration
 
-- ⭐ Message logging via emoji reactions
 - 💬 Slash commands with full type safety
 - 🧵 Auto-create threads for labeled GitHub items
 
@@ -87,19 +85,21 @@ GITHUB_TOKEN=your_github_token
 GITHUB_ORG=PowerPlatformToolBox
 
 # Bot Configuration
-LOG_CHANNEL_ID=your_logging_channel_id
-REACTION_EMOJI=⭐
+STARS_VOICE_CHANNEL_ID=your_stars_voice_channel_id
 
 # Webhook Configuration
 WEBHOOK_PORT=3000
 WEBHOOK_SECRET=your_webhook_secret
 PROJECT_THREAD_CHANNEL_ID=your_thread_channel_id
 RELEASE_CHANNEL_ID=your_release_channel_id
-PROJECT_DISCUSSION_LABEL=DiscordDiscussion
+WATCHED_REPOSITORIES=desktop-app
+WATCHED_LABELS=DiscordDiscussion
 
 # Environment
 NODE_ENV=development
 LOG_LEVEL=debug
+ENABLE_FILE_LOGS=false
+LOG_DIR=./logs
 ```
 
 Notes on environment variables
@@ -108,15 +108,17 @@ Notes on environment variables
 - `DISCORD_CLIENT_ID`: Application client ID (used when deploying commands).
 - `DISCORD_GUILD_ID`: (required) The ID of the Discord server.
 - `GITHUB_TOKEN`: Personal access token with repo permissions (required for GitHub API calls).
-- `GITHUB_ORG`: Organization used when creating/querying repos (default `PowerPlatformToolBox`).
-- `LOG_CHANNEL_ID`: Channel ID where structured logs/alerts are posted (required).
-- `REACTION_EMOJI`: Emoji used to trigger message logging (default `📝`).
-- `WEBHOOK_PORT`: Port the webhook server listens on when enabled (default `3000`).
+- `GITHUB_ORG`: Organization used when creating/querying repos (required).
+- `WEBHOOK_PORT`: Port the webhook server listens on when enabled (required).
 - `WEBHOOK_SECRET`: HMAC secret used to validate GitHub webhook payloads (required for webhook security).
 - `PROJECT_THREAD_CHANNEL_ID`: Channel ID where auto-created discussion threads are created.
 - `RELEASE_CHANNEL_ID`: Channel ID where release announcements are posted.
-- `PROJECT_DISCUSSION_LABEL`: GitHub label that triggers discussion thread creation (default `DiscordDiscussion`).
-- `NODE_ENV` / `LOG_LEVEL`: Standard environment and logging level settings.
+- `STARS_VOICE_CHANNEL_ID`: Voice channel renamed with the GitHub star count.
+- `WATCHED_REPOSITORIES`: Comma-separated repositories to watch for releases.
+- `WATCHED_LABELS`: Comma-separated GitHub labels that trigger discussion thread creation.
+- `NODE_ENV` / `LOG_LEVEL` / `ENABLE_FILE_LOGS` / `LOG_DIR`: Environment and logging settings.
+
+All variables above are required. The bot fails to start if any is missing.
 
 ## Developer Setup
 

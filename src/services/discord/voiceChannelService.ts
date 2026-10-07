@@ -78,30 +78,6 @@ export class VoiceChannelService {
     const channelName = `⭐ ${starCount.toLocaleString('en-US')}`;
     return this.updateChannelName(client, channelId, channelName);
   }
-
-  /**
-   * Update the release voice channel with the latest version
-   */
-  public async updateReleaseChannel(
-    client: Client,
-    channelId: string,
-    version: string
-  ): Promise<boolean> {
-    const channelName = `Release: ${version}`;
-    return this.updateChannelName(client, channelId, channelName);
-  }
-
-  /**
-   * Update the insider voice channel with the latest insider version
-   */
-  public async updateInsiderChannel(
-    client: Client,
-    channelId: string,
-    version: string
-  ): Promise<boolean> {
-    const channelName = `Insider: ${version}`;
-    return this.updateChannelName(client, channelId, channelName);
-  }
 }
 
 let voiceChannelServiceInstance: VoiceChannelService | null = null;

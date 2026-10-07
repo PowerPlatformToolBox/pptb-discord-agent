@@ -2,53 +2,9 @@
  * Discord embed builders for consistent message formatting
  */
 
-import type { Message, MessageReaction, User } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
 import { CONSTANTS } from '../config/constants';
 import type { GitHubIssue } from '../types';
-
-/**
- * Create embed for logged message
- */
-export function createMessageLogEmbed(
-  message: Message,
-  _reaction: MessageReaction,
-  user: User
-): EmbedBuilder {
-  const embed = new EmbedBuilder()
-    .setTitle('📝 Message Logged')
-    .setColor(CONSTANTS.DISCORD_COLORS.PRIMARY)
-    .setDescription(message.content || '*No text content*')
-    .addFields(
-      { name: 'Author', value: `<@${message.author.id}>`, inline: true },
-      { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
-      { name: 'Logged By', value: `<@${user.id}>`, inline: true },
-      {
-        name: 'Message Link',
-        value: `[Jump to Message](https://discord.com/channels/${message.guild?.id ?? '@me'}/${message.channel.id}/${message.id})`,
-        inline: false,
-      }
-    )
-    .setTimestamp(message.createdAt)
-    .setFooter({ text: `Message ID: ${message.id}` });
-
-  if (message.attachments.size > 0) {
-    const attachmentLinks = message.attachments
-      .map((attachment) => `[${attachment.name}](${attachment.url})`)
-      .join(', ');
-    embed.addFields({ name: '📎 Attachments', value: attachmentLinks, inline: false });
-  }
-
-  if (message.embeds.length > 0) {
-    embed.addFields({
-      name: '🔗 Original Embeds',
-      value: `This message contained ${message.embeds.length} embed(s)`,
-      inline: false,
-    });
-  }
-
-  return embed;
-}
 
 /**
  * Create error embed
