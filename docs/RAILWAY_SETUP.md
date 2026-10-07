@@ -293,18 +293,6 @@ Should see: "Webhook received"
 
 ---
 
-## Husky Prepare Script Fix
-
-Note the `prepare` script in package.json:
-
-```json
-"prepare": "husky || true"
-```
-
-The `|| true` prevents build failures in Railway (where `.git` folder doesn't exist). This is a Railway-specific fix.
-
----
-
 ## Security Best Practices
 
 1. ✅ Use environment variables for all secrets

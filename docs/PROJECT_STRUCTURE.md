@@ -73,7 +73,6 @@ pptb-discord-assistant/
 │   ├── tsconfig.build.json     # Build-specific TypeScript config
 │   ├── eslint.config.mjs       # ESLint configuration (TypeScript, strict rules)
 │   ├── .prettierrc.json        # Prettier code formatter config
-│   ├── .lintstagedrc.json      # lint-staged pre-commit hooks
 │   ├── .gitignore              # Git ignore patterns
 │   ├── .env.example            # Environment variables template
 │   ├── .env                    # Actual environment variables (git-ignored)
@@ -118,7 +117,7 @@ pptb-discord-assistant/
 ### Code Quality
 - ESLint strict TypeScript rules
 - Prettier formatting enforcement
-- Pre-commit hooks with Husky
+- CI checks (lint, format, type-check) via GitHub Actions
 - Source maps for debugging
 - Full type safety (noImplicitAny: true)
 
