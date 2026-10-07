@@ -21,6 +21,7 @@ export interface LoggingConfig {
 export interface WebhookConfig {
   port: number;
   secret: string;
+  pptbEventsSecret: string;
   projectThreadChannel: string;
   releaseAnnouncementChannel: string;
   starsVoiceChannel: string;
@@ -48,6 +49,7 @@ export interface EnvironmentVariables {
   LOG_DIR: string;
   WEBHOOK_PORT: number;
   WEBHOOK_SECRET: string;
+  PPTB_EVENTS_SECRET: string;
   PROJECT_THREAD_CHANNEL_ID: string;
   RELEASE_CHANNEL_ID: string;
   STARS_VOICE_CHANNEL_ID: string;

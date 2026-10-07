@@ -24,6 +24,7 @@ const environmentSchema = z.object({
   LOG_DIR: requiredString('LOG_DIR'),
   WEBHOOK_PORT: z.coerce.number().int().positive(),
   WEBHOOK_SECRET: requiredString('WEBHOOK_SECRET'),
+  PPTB_EVENTS_SECRET: requiredString('PPTB_EVENTS_SECRET'),
   PROJECT_THREAD_CHANNEL_ID: requiredString('PROJECT_THREAD_CHANNEL_ID'),
   RELEASE_CHANNEL_ID: requiredString('RELEASE_CHANNEL_ID'),
   STARS_VOICE_CHANNEL_ID: requiredString('STARS_VOICE_CHANNEL_ID'),

@@ -36,6 +36,7 @@ export function loadConfig(): AppConfig {
       webhook: {
         port: env.WEBHOOK_PORT,
         secret: env.WEBHOOK_SECRET,
+        pptbEventsSecret: env.PPTB_EVENTS_SECRET,
         projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
         releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
         starsVoiceChannel: env.STARS_VOICE_CHANNEL_ID,

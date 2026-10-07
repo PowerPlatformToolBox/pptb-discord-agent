@@ -6,9 +6,13 @@ import type { Client } from 'discord.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { getConfig } from '../../config/config';
+import { pptbEventSchema, type PptbEvent } from '../../types/pptbEvents';
 import type { GitHubWebhookPayload } from '../../types/webhook';
 import { createErrorLogObject } from '../../utils/errorHelper';
 import { LoggerFactory } from '../../utils/logger';
+import { PPTB_SIGNATURE_HEADER, PPTB_TIMESTAMP_HEADER, verifyPptbSignature } from './pptbSignature';
+
+export type PptbEventListener = (event: PptbEvent) => Promise<unknown>;
 
 export class WebhookServer {
   private readonly logger = LoggerFactory.forService('WebhookServer');
@@ -17,7 +21,8 @@ export class WebhookServer {
   private discordClient: Client | null = null;
 
   constructor(
-    private readonly handlers: Map<string, (payload: GitHubWebhookPayload) => Promise<void>>
+    private readonly handlers: Map<string, (payload: GitHubWebhookPayload) => Promise<void>>,
+    private readonly pptbEventListener?: PptbEventListener
   ) {}
 
   public setDiscordClient(client: Client): void {
@@ -97,6 +102,11 @@ export class WebhookServer {
         return;
       }
 
+      if (req.url === '/pptb-events') {
+        await this.handlePptbEvent(req, res, body);
+        return;
+      }
+
       try {
         // Verify signature if secret is configured
         if (this.config.secret) {
@@ -147,6 +157,61 @@ export class WebhookServer {
     });
   }
 
+  private async handlePptbEvent(
+    req: IncomingMessage,
+    res: ServerResponse,
+    body: string
+  ): Promise<void> {
+    const reply = (status: number, payload: Record<string, unknown>): void => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(payload));
+    };
+
+    const signed = verifyPptbSignature(
+      this.config.pptbEventsSecret,
+      body,
+      req.headers[PPTB_TIMESTAMP_HEADER] as string | undefined,
+      req.headers[PPTB_SIGNATURE_HEADER] as string | undefined
+    );
+    if (!signed) {
+      this.logger.warn('Invalid PPTB event signature');
+      reply(401, { error: 'Invalid signature' });
+      return;
+    }
+
+    let parsed;
+    try {
+      parsed = pptbEventSchema.safeParse(JSON.parse(body));
+    } catch {
+      reply(400, { error: 'Invalid JSON' });
+      return;
+    }
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map(
+        (issue) => `${issue.path.join('.')}: ${issue.message}`
+      );
+      this.logger.warn('Invalid PPTB event payload', { issues });
+      reply(400, { error: 'Invalid payload', issues });
+      return;
+    }
+
+    if (!this.pptbEventListener) {
+      reply(503, { error: 'PPTB events are not enabled' });
+      return;
+    }
+
+    try {
+      const result = await this.pptbEventListener(parsed.data);
+      reply(200, { success: true, result });
+    } catch (error) {
+      this.logger.error('PPTB event processing error', {
+        id: parsed.data.id,
+        ...createErrorLogObject(error),
+      });
+      reply(500, { error: 'Internal server error' });
+    }
+  }
+
   private verifySignature(body: string, signature: string): boolean {
     if (!this.config.secret) return true;
 
@@ -168,10 +233,11 @@ export class WebhookServer {
 let webhookServerInstance: WebhookServer | null = null;
 
 export function createWebhookServer(
-  handlers: Map<string, (payload: GitHubWebhookPayload) => Promise<void>>
+  handlers: Map<string, (payload: GitHubWebhookPayload) => Promise<void>>,
+  pptbEventListener?: PptbEventListener
 ): WebhookServer {
   if (!webhookServerInstance) {
-    webhookServerInstance = new WebhookServer(handlers);
+    webhookServerInstance = new WebhookServer(handlers, pptbEventListener);
   }
   return webhookServerInstance;
 }

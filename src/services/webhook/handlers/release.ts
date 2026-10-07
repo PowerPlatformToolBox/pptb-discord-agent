@@ -3,10 +3,13 @@
  */
 import { type Client, ChannelType } from 'discord.js';
 import { getConfig } from '../../../config/config';
+import { NOTIFICATIONS, resolveVscodeChannel } from '../../../config/notifications';
 import type { GitHubWebhookPayload } from '../../../types/webhook';
 import { getChannelCache } from '../../../utils/channelCache';
 import { getErrorMessage } from '../../../utils/errorHelper';
 import { LoggerFactory } from '../../../utils/logger';
+
+const VSCODE_REPOSITORY = 'vscode-extension';
 
 /**
  * Extract the "What's New" (or "What's Changed") section from the release body.
@@ -68,12 +71,13 @@ function hyperlinkPRReferences(text: string, repoUrl: string): string {
 function formatReleaseMessage(
   release: NonNullable<GitHubWebhookPayload['release']>,
   repoUrl: string,
-  isInsiderRelease: boolean
+  isInsiderRelease: boolean,
+  productPrefix = ''
 ): string {
   const version = release.tag_name.replace(/^v/, '');
   const header = isInsiderRelease
-    ? `# :construction:  Insider Pre-Release - ${version}`
-    : `# :rocket:  Release - ${version}`;
+    ? `# :construction:  ${productPrefix}Insider Pre-Release - ${version}`
+    : `# :rocket:  ${productPrefix}Release - ${version}`;
 
   const whatsNewItems = extractWhatsNewSection(release.body || '');
 
@@ -81,7 +85,7 @@ function formatReleaseMessage(
 
   if (whatsNewItems.length > 0) {
     parts.push('');
-    parts.push('## :clipboard: What\'s New');
+    parts.push("## :clipboard: What's New");
     parts.push('');
     for (const item of whatsNewItems) {
       parts.push(hyperlinkPRReferences(item, repoUrl));
@@ -124,12 +128,18 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
   // Determine if this is an insider release (pre-release)
   const isInsiderRelease = release.prerelease;
 
+  // VS Code extension releases have their own channel in the notification config
+  const isVscodeRelease = payload.repository.name === VSCODE_REPOSITORY;
+  const channelId = isVscodeRelease
+    ? resolveVscodeChannel(NOTIFICATIONS)
+    : config.releaseAnnouncementChannel;
+
   try {
     const channelCache = getChannelCache();
-    const channel = await channelCache.fetch(client, config.releaseAnnouncementChannel);
+    const channel = await channelCache.fetch(client, channelId);
 
     if (!channel || !channel.isTextBased()) {
-      logger.error('Invalid release channel', { channelId: config.releaseAnnouncementChannel });
+      logger.error('Invalid release channel', { channelId });
       return;
     }
 
@@ -140,13 +150,18 @@ export async function handleRelease(payload: GitHubWebhookPayload, client: Clien
       channel.type !== ChannelType.DM
     ) {
       logger.error('Channel type does not support send', {
-        channelId: config.releaseAnnouncementChannel,
+        channelId,
         channelType: channel.type,
       });
       return;
     }
 
-    const message = formatReleaseMessage(release, payload.repository.html_url, isInsiderRelease);
+    const message = formatReleaseMessage(
+      release,
+      payload.repository.html_url,
+      isInsiderRelease,
+      isVscodeRelease ? 'VS Code Extension ' : ''
+    );
 
     await channel.send({ content: message });
 

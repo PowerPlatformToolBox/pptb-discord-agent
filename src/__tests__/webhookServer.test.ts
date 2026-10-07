@@ -1,6 +1,9 @@
 import { createHmac } from 'node:crypto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { signPptbEvent } from '../services/webhook/pptbSignature';
+import type { PptbEventListener } from '../services/webhook/webhookServer';
 import type { GitHubWebhookPayload } from '../types/webhook';
+import { samplePptbEvent } from './pptbFixtures';
 import { TEST_ENV } from './testEnv';
 
 const BASE = `http://127.0.0.1:${TEST_ENV.WEBHOOK_PORT}`;
@@ -12,6 +15,7 @@ type Server = { start(): void; stop(): void };
 describe('WebhookServer', () => {
   let server: Server;
   let handler: ReturnType<typeof vi.fn>;
+  let pptbListener: Mock<PptbEventListener>;
 
   beforeEach(async () => {
     for (const [key, value] of Object.entries(TEST_ENV)) vi.stubEnv(key, value);
@@ -20,8 +24,10 @@ describe('WebhookServer', () => {
     loadConfig();
     const { WebhookServer } = await import('../services/webhook/webhookServer');
     handler = vi.fn().mockResolvedValue(undefined);
+    pptbListener = vi.fn<PptbEventListener>().mockResolvedValue('posted');
     server = new WebhookServer(
-      new Map([['star', handler as (payload: GitHubWebhookPayload) => Promise<void>]])
+      new Map([['star', handler as (payload: GitHubWebhookPayload) => Promise<void>]]),
+      pptbListener
     );
     server.start();
     // wait until the port accepts connections
@@ -83,5 +89,55 @@ describe('WebhookServer', () => {
       headers: { 'x-hub-signature-256': sign(body), 'x-github-event': 'star' },
     });
     expect(res.status).toBe(500);
+  });
+
+  describe('POST /pptb-events', () => {
+    const postEvent = (body: string, headers: Record<string, string> = {}): Promise<Response> =>
+      fetch(`${BASE}/pptb-events`, { method: 'POST', body, headers });
+    const signedHeaders = (body: string): Record<string, string> => {
+      const timestamp = String(Math.floor(Date.now() / 1000));
+      return {
+        'x-pptb-timestamp': timestamp,
+        'x-pptb-signature': signPptbEvent(TEST_ENV.PPTB_EVENTS_SECRET, timestamp, body),
+      };
+    };
+
+    it('rejects an unsigned event', async () => {
+      const res = await postEvent(JSON.stringify(samplePptbEvent()));
+      expect(res.status).toBe(401);
+      expect(pptbListener).not.toHaveBeenCalled();
+    });
+
+    it('rejects an event signed with the GitHub webhook secret', async () => {
+      const body = JSON.stringify(samplePptbEvent());
+      const timestamp = String(Math.floor(Date.now() / 1000));
+      const res = await postEvent(body, {
+        'x-pptb-timestamp': timestamp,
+        'x-pptb-signature': signPptbEvent(TEST_ENV.WEBHOOK_SECRET, timestamp, body),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects a signed event with an invalid payload', async () => {
+      const body = JSON.stringify({ ...samplePptbEvent(), event: 'Verified' });
+      const res = await postEvent(body, signedHeaders(body));
+      expect(res.status).toBe(400);
+      expect(pptbListener).not.toHaveBeenCalled();
+    });
+
+    it('passes a valid signed event to the listener', async () => {
+      const event = samplePptbEvent();
+      const body = JSON.stringify(event);
+      const res = await postEvent(body, signedHeaders(body));
+      expect(res.status).toBe(200);
+      expect(pptbListener).toHaveBeenCalledWith(event);
+    });
+
+    it('returns 500 when posting to Discord fails', async () => {
+      pptbListener.mockRejectedValueOnce(new Error('discord down'));
+      const body = JSON.stringify(samplePptbEvent());
+      const res = await postEvent(body, signedHeaders(body));
+      expect(res.status).toBe(500);
+    });
   });
 });

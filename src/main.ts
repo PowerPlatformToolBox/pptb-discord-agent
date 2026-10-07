@@ -7,6 +7,8 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
+import { validateNotificationConfig } from './config/notifications';
+import { PptbEventHandler } from './services/pptbEvents/handler';
 import { handleProjectItem } from './services/webhook/handlers/projectItem';
 import { handleRelease } from './services/webhook/handlers/release';
 import { handleStar } from './services/webhook/handlers/star';
@@ -26,6 +28,7 @@ declare module 'discord.js' {
 async function main(): Promise<void> {
   try {
     const config = loadConfig();
+    const notifications = validateNotificationConfig();
     const logger = LoggerFactory.generic();
 
     logger.info('Starting PPTB Discord Assistant', {
@@ -107,7 +110,8 @@ async function main(): Promise<void> {
     });
 
     // Create and start webhook server
-    const webhookServer = createWebhookServer(webhookHandlers);
+    const pptbEvents = new PptbEventHandler(client, notifications);
+    const webhookServer = createWebhookServer(webhookHandlers, (event) => pptbEvents.handle(event));
     webhookServer.setDiscordClient(client);
 
     // Start webhook server immediately (before Discord login)
