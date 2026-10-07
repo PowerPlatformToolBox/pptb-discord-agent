@@ -23,7 +23,7 @@
   "author": "PowerPlatformToolBox",
   "license": "GPL-3.0",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=10.18.3"
   },
   "packageManager": "pnpm@10.18.3",
@@ -34,7 +34,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/node": "^20.19.30",
+    "@types/node": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "eslint": "^8.54.0",

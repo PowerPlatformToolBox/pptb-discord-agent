@@ -45,7 +45,7 @@ TypeScript Discord bot featuring:
 
 ### Prerequisites
 
-- **Node.js 18+**
+- **Node.js 24+**
 - **pnpm (required)** — workspace uses `pnpm@10.x` (recommended `pnpm@10.18.3`). Do not use npm/yarn for workspace installs.
 - Discord Bot Token
 - GitHub Personal Access Token
@@ -124,7 +124,7 @@ All variables above are required. The bot fails to start if any is missing.
 
 Follow these steps to get a local development environment matching CI/maintainer expectations.
 
-- Ensure Node.js 18+ is installed. We recommend using `pnpm` (workspace aligns to `pnpm@10.x`).
+- Ensure Node.js 24+ is installed. We recommend using `pnpm` (workspace aligns to `pnpm@10.x`).
 - Copy the example env and fill secrets locally (do not commit):
 
 ```bash

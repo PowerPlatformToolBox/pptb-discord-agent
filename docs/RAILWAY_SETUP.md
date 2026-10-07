@@ -69,7 +69,7 @@ Railway reads `package.json` and sees:
 {
   "packageManager": "pnpm@9.14.4",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=24.0.0",
     "pnpm": ">=8.0.0"
   }
 }
@@ -77,7 +77,7 @@ Railway reads `package.json` and sees:
 
 This tells Railway:
 
-- Use Node.js 18+
+- Use Node.js 24+
 - Use pnpm 9.14.4 specifically
 - Install dependencies with pnpm
 
