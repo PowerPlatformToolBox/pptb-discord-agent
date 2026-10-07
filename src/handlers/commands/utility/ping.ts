@@ -10,12 +10,12 @@ export const pingCommand: BotCommand = {
     .setName('ping')
     .setDescription('Check bot latency and API response time'),
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    const sent = await interaction.reply({
+    const { resource } = await interaction.reply({
       content: 'Pinging...',
-      fetchReply: true,
+      withResponse: true,
     });
 
-    const latency = sent.createdTimestamp - interaction.createdTimestamp;
+    const latency = (resource?.message?.createdTimestamp ?? Date.now()) - interaction.createdTimestamp;
     const apiLatency = Math.round(interaction.client.ws.ping);
 
     await interaction.editReply(

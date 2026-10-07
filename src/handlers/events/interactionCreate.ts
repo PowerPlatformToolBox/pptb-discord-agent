@@ -2,7 +2,12 @@
  * Interaction create event handler (slash commands)
  */
 
-import { Events, type ChatInputCommandInteraction, type Interaction } from 'discord.js';
+import {
+  Events,
+  MessageFlags,
+  type ChatInputCommandInteraction,
+  type Interaction,
+} from 'discord.js';
 import type { BotCommand, InteractionCreateEvent } from '../../types';
 import { createErrorLogObject } from '../../utils/errorHelper';
 import { getLogger } from '../../utils/logger';
@@ -35,7 +40,7 @@ export const interactionCreateEvent: InteractionCreateEvent = {
 
       const errorMessage = {
         content: 'There was an error executing this command.',
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral as const,
       };
 
       if (interaction.replied || interaction.deferred) {

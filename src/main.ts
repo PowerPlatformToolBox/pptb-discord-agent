@@ -126,13 +126,15 @@ async function main(): Promise<void> {
 
     // Login to Discord
     await client.login(config.discord.token);
-    // Cleanup on exit
-    process.on('SIGINT', () => {
-      logger.info('Shutting down...');
+    // Cleanup on exit (Railway stops containers with SIGTERM)
+    const shutdown = (signal: string): void => {
+      logger.info('Shutting down...', { signal });
       webhookServer.stop();
       void client.destroy();
       process.exit(0);
-    });
+    };
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
   } catch (error) {
     const logger = LoggerFactory.generic();
     logger.error('Failed to start bot', createErrorLogObject(error));

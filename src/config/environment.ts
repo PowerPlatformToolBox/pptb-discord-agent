@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { EnvironmentVariables } from '../types';
 
 // Load environment variables
-dotenvConfig();
+dotenvConfig({ quiet: true });
 
 const requiredString = (name: string): z.ZodString => z.string().min(1, `${name} is required`);
 
@@ -39,7 +39,7 @@ export function validateEnvironment(): EnvironmentVariables {
   const result = environmentSchema.safeParse(process.env);
 
   if (!result.success) {
-    const errors = result.error.errors.map((err) => `${err.path.join('.')}: ${err.message}`);
+    const errors = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
     throw new Error(`Environment validation failed:\n${errors.join('\n')}`);
   }
 
