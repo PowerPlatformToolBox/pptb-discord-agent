@@ -41,7 +41,7 @@ TypeScript Discord bot featuring:
 - 🔐 Environment validation with Zod
 - 📊 Structured logging with Winston
 - 🧪 ESLint + Prettier code quality
-- 🪝 Pre-commit hooks with Husky
+- 🪝 CI checks via GitHub Actions
 
 ## Quick Start
 
