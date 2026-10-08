@@ -44,11 +44,16 @@ export class PptbEventHandler {
       throw new Error(`Notification channel ${route.channelId} is missing or not a text channel`);
     }
 
+    const { mention } = route;
     await channel.send({
-      content: route.roleId ? `<@&${route.roleId}>` : undefined,
+      content: mention ? `<@${mention.type === 'role' ? '&' : ''}${mention.id}>` : undefined,
       embeds: [createPptbEventEmbed(event)],
-      // Only the configured role may ping; text from pptb-web never can
-      allowedMentions: { parse: [], roles: route.roleId ? [route.roleId] : [] },
+      // Only the configured role or user may ping; text from pptb-web never can
+      allowedMentions: {
+        parse: [],
+        roles: mention?.type === 'role' ? [mention.id] : [],
+        users: mention?.type === 'user' ? [mention.id] : [],
+      },
     });
 
     this.remember(event.id);

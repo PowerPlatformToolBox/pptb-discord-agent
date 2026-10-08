@@ -4,6 +4,7 @@ import {
   NOTIFICATIONS,
   resolveRoute,
   resolveVscodeChannel,
+  unconfiguredMentions,
   validateNotificationConfig,
 } from '../config/notifications';
 import { createPptbEventEmbed } from '../services/pptbEvents/embed';
@@ -40,8 +41,25 @@ describe('notification config', () => {
 
   it('names a bad ID', () => {
     const config = testNotificationConfig();
-    config.roles.toolIntake = 'not-an-id';
-    expect(() => validateNotificationConfig(config)).toThrow(/roles\.toolIntake/);
+    config.mentions.toolIntake = { type: 'role', id: 'not-an-id' };
+    expect(() => validateNotificationConfig(config)).toThrow(/mentions\.toolIntake\.id/);
+  });
+
+  it('names an event mention that is not defined', () => {
+    const config = testNotificationConfig();
+    config.categories.verify.events.Rejected = { mention: 'toolVerifcation' };
+    expect(() => validateNotificationConfig(config)).toThrow(
+      /verify\.events\.Rejected\.mention: "toolVerifcation" is not defined/
+    );
+  });
+
+  it('accepts the real config and lists mentions still missing an ID', () => {
+    const config = validateNotificationConfig();
+    expect(unconfiguredMentions(config)).toEqual(
+      Object.entries(NOTIFICATIONS.mentions)
+        .filter(([, m]) => !m.id)
+        .map(([key]) => key)
+    );
   });
 
   it('keeps Revoked submissions muted until pptb-web can send them', () => {
@@ -50,15 +68,24 @@ describe('notification config', () => {
 
   it('falls back from event to category to default channel', () => {
     const config = testNotificationConfig();
-    expect(resolveRoute(config, 'verify', 'Assigned')).toEqual({
+    expect(resolveRoute(config, 'verify', 'Rejected')).toEqual({
       channelId: '100000000000000001',
-      roleId: undefined,
+      mention: undefined,
     });
     expect(resolveRoute(config, 'tool', 'Update')?.channelId).toBe('100000000000000002');
     expect(resolveRoute(config, 'tool', 'UpdateFailed')).toEqual({
       channelId: '100000000000000003',
-      roleId: '200000000000000001',
+      mention: { type: 'role', id: '200000000000000001' },
     });
+  });
+
+  it('resolves a user mention and skips one with no ID', () => {
+    const config = testNotificationConfig();
+    expect(resolveRoute(config, 'verify', 'Assigned')?.mention).toEqual({
+      type: 'user',
+      id: '300000000000000001',
+    });
+    expect(resolveRoute(config, 'verify', 'Approved')?.mention).toBeUndefined();
   });
 
   it('returns null for a muted event', () => {
@@ -137,7 +164,19 @@ describe('PptbEventHandler', () => {
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         content: '<@&200000000000000001>',
-        allowedMentions: { parse: [], roles: ['200000000000000001'] },
+        allowedMentions: { parse: [], roles: ['200000000000000001'], users: [] },
+      })
+    );
+  });
+
+  it('pings a user with only that user allowed', async () => {
+    await handler.handle(
+      samplePptbEvent({ id: 'assigned', category: 'verify', event: 'Assigned' } as never)
+    );
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: '<@300000000000000001>',
+        allowedMentions: { parse: [], roles: [], users: ['300000000000000001'] },
       })
     );
   });
@@ -145,7 +184,10 @@ describe('PptbEventHandler', () => {
   it('posts without a ping when the event has no role', async () => {
     await handler.handle(samplePptbEvent({ id: 'other', event: 'Approved' } as never));
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ content: undefined, allowedMentions: { parse: [], roles: [] } })
+      expect.objectContaining({
+        content: undefined,
+        allowedMentions: { parse: [], roles: [], users: [] },
+      })
     );
   });
 

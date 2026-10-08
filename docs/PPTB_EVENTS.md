@@ -57,6 +57,6 @@ const signature =
 
 ## Routing
 
-Channels, role pings and muted events are set in `src/config/notifications.ts`. Every category uses `defaultChannelId` until it gets its own `channelId`. A single event can also have its own `channelId`, `mention` or `enabled: false`.
+Channels, pings and muted events are set in `src/config/notifications.ts`. Every category uses `defaultChannelId` until it gets its own `channelId`. A single event can also have its own `channelId`, `mention` or `enabled: false`. A `mention` names an entry in `mentions`, which is a role (`{ type: 'role', id }`) or a user (`{ type: 'user', id }`). An entry without an `id` posts with no ping.
 
 VS Code extension releases come in through the GitHub release webhook and use `categories.vscode.channelId`, falling back to the default channel.

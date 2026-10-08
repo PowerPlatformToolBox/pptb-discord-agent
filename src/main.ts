@@ -7,7 +7,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { loadConfig } from './config/config';
 import { INTENTS, PARTIALS } from './config/intents';
-import { validateNotificationConfig } from './config/notifications';
+import { unconfiguredMentions, validateNotificationConfig } from './config/notifications';
 import { PptbEventHandler } from './services/pptbEvents/handler';
 import { handleProjectItem } from './services/webhook/handlers/projectItem';
 import { handleRelease } from './services/webhook/handlers/release';
@@ -28,8 +28,14 @@ declare module 'discord.js' {
 async function main(): Promise<void> {
   try {
     const config = loadConfig();
-    const notifications = validateNotificationConfig();
     const logger = LoggerFactory.generic();
+    const notifications = validateNotificationConfig();
+    const missingMentions = unconfiguredMentions(notifications);
+    if (missingMentions.length > 0) {
+      logger.warn('Notification mentions have no ID yet; those events post without a ping', {
+        mentions: missingMentions,
+      });
+    }
 
     logger.info('Starting PPTB Discord Assistant', {
       nodeEnv: config.nodeEnv,

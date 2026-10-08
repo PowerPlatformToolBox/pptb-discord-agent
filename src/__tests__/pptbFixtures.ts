@@ -15,7 +15,12 @@ export const samplePptbEvent = (overrides: Partial<PptbEvent> = {}): PptbEvent =
 
 export const testNotificationConfig = (): NotificationConfig => ({
   defaultChannelId: '100000000000000001',
-  roles: { toolIntake: '200000000000000001', toolVerification: '200000000000000002' },
+  mentions: {
+    toolIntake: { type: 'role', id: '200000000000000001' },
+    toolVerification: { type: 'role', id: '200000000000000002' },
+    maintainer: { type: 'user', id: '300000000000000001' },
+    notYetCreated: { type: 'role' },
+  },
   categories: {
     toolSubmission: {
       events: {
@@ -40,8 +45,8 @@ export const testNotificationConfig = (): NotificationConfig => ({
     verify: {
       events: {
         Requested: { mention: 'toolVerification' },
-        Assigned: {},
-        Approved: {},
+        Assigned: { mention: 'maintainer' },
+        Approved: { mention: 'notYetCreated' },
         Rejected: {},
         Revoked: {},
       },
