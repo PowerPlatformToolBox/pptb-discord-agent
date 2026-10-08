@@ -2,13 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 
 export interface ReleaseWebhookPayload {
   action:
-    | 'published'
-    | 'created'
-    | 'edited'
-    | 'deleted'
-    | 'released'
-    | 'prereleased'
-    | 'unpublished';
+    'published' | 'created' | 'edited' | 'deleted' | 'released' | 'prereleased' | 'unpublished';
   release: {
     id: number;
     tag_name: string;

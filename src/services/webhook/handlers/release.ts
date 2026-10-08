@@ -81,7 +81,7 @@ function formatReleaseMessage(
 
   if (whatsNewItems.length > 0) {
     parts.push('');
-    parts.push('## :clipboard: What\'s New');
+    parts.push("## :clipboard: What's New");
     parts.push('');
     for (const item of whatsNewItems) {
       parts.push(hyperlinkPRReferences(item, repoUrl));
