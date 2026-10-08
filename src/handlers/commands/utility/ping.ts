@@ -15,7 +15,8 @@ export const pingCommand: BotCommand = {
       withResponse: true,
     });
 
-    const latency = (resource?.message?.createdTimestamp ?? Date.now()) - interaction.createdTimestamp;
+    const latency =
+      (resource?.message?.createdTimestamp ?? Date.now()) - interaction.createdTimestamp;
     const apiLatency = Math.round(interaction.client.ws.ping);
 
     await interaction.editReply(
