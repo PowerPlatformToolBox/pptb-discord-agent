@@ -2,12 +2,8 @@
  * Environment variable schema and validation
  */
 
-import { config as dotenvConfig } from 'dotenv';
 import { z } from 'zod';
 import type { EnvironmentVariables } from '../types';
-
-// Load environment variables
-dotenvConfig({ quiet: true });
 
 const requiredString = (name: string): z.ZodString => z.string().min(1, `${name} is required`);
 
