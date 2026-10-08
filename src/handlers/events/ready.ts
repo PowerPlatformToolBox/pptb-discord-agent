@@ -18,7 +18,7 @@ export const readyEvent: ReadyEvent = {
     });
 
     await client.user.setPresence({
-      activities: [{ name: 'GitHub Issues', type: 3 }],
+      activities: [{ name: 'Proiding Awesomeness', type: 3 }],
       status: 'online',
     });
 
