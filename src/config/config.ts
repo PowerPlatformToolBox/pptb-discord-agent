@@ -2,15 +2,64 @@
  * Application configuration management
  */
 
-import type { AppConfig } from '../types';
+import type { ChannelAlias } from '../notifications/channels';
 import { ConfigurationError } from '../types/errors';
-import { LoggerFactory } from '../utils/logger';
 import { validateEnvironment } from './environment';
+
+export interface AppConfig {
+  discord: {
+    token: string;
+    clientId: string;
+    publicKey: string;
+    guildId: string;
+    channels: Record<ChannelAlias, string>;
+  };
+  github: {
+    token: string;
+    org: string;
+    webhookSecret: string;
+    starsRepository: string;
+    watchedLabels: string[];
+  };
+  security: {
+    platformEventsSecret: string;
+    cronSecret: string;
+  };
+  notifications: {
+    disabled: string[];
+    routes: Record<string, string>;
+  };
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
 
 let cachedConfig: AppConfig | null = null;
 
+export function parseList(value: string | undefined): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
 /**
- * Load and validate application configuration
+ * Parse `key=target,key2=target2` pairs.
+ */
+export function parseRoutes(value: string | undefined): Record<string, string> {
+  const routes: Record<string, string> = {};
+  for (const pair of parseList(value)) {
+    const [key, target] = pair.split('=').map((part) => part.trim());
+    if (!key || !target) {
+      throw new ConfigurationError(
+        `Invalid NOTIFICATION_ROUTES entry "${pair}" (expected key=target)`
+      );
+    }
+    routes[key] = target;
+  }
+  return routes;
+}
+
+/**
+ * Load and validate application configuration (cached per function instance)
  */
 export function loadConfig(): AppConfig {
   if (cachedConfig) {
@@ -24,68 +73,47 @@ export function loadConfig(): AppConfig {
       discord: {
         token: env.DISCORD_BOT_TOKEN,
         clientId: env.DISCORD_CLIENT_ID,
+        publicKey: env.DISCORD_PUBLIC_KEY,
         guildId: env.DISCORD_GUILD_ID,
+        channels: {
+          admin: env.DISCORD_CHANNEL_ADMIN,
+          tools: env.DISCORD_CHANNEL_TOOLS,
+          releases: env.DISCORD_CHANNEL_RELEASES,
+          insider: env.DISCORD_CHANNEL_INSIDER,
+          discussions: env.DISCORD_CHANNEL_DISCUSSIONS,
+          stars: env.DISCORD_CHANNEL_STARS,
+        },
       },
       github: {
         token: env.GITHUB_TOKEN,
         org: env.GITHUB_ORG,
+        webhookSecret: env.GITHUB_WEBHOOK_SECRET,
+        starsRepository: env.STARS_REPOSITORY,
+        watchedLabels: parseList(env.WATCHED_LABELS),
       },
-      logging: {
-        level: env.LOG_LEVEL,
+      security: {
+        platformEventsSecret: env.PLATFORM_EVENTS_SECRET,
+        cronSecret: env.CRON_SECRET,
       },
-      webhook: {
-        port: env.WEBHOOK_PORT,
-        secret: env.WEBHOOK_SECRET,
-        projectThreadChannel: env.PROJECT_THREAD_CHANNEL_ID,
-        releaseAnnouncementChannel: env.RELEASE_CHANNEL_ID,
-        starsVoiceChannel: env.STARS_VOICE_CHANNEL_ID,
-        watchedRepositories: (() => {
-          const parsed = env.WATCHED_REPOSITORIES.split(',')
-            .map((r) => r.trim())
-            .filter((r) => r.length > 0);
-          // If parsing results in empty array, fall back to schema default
-          return parsed.length > 0 ? parsed : ['desktop-app'];
-        })(),
-        watchedLabels: (() => {
-          const parsed = env.WATCHED_LABELS.split(',')
-            .map((l) => l.trim())
-            .filter((l) => l.length > 0);
-          // If parsing results in empty array, fall back to schema default
-          return parsed.length > 0 ? parsed : ['DiscordDiscussion'];
-        })(),
+      notifications: {
+        disabled: parseList(env.DISABLED_NOTIFICATIONS),
+        routes: parseRoutes(env.NOTIFICATION_ROUTES),
       },
-      nodeEnv: env.NODE_ENV,
+      logLevel: env.LOG_LEVEL,
     };
-
-    // Logger is initialized here after config is created
-    // IMPORTANT: Logger must remain independent of this config to avoid circular dependencies
-    // Logger reads from process.env directly and should not call loadConfig()
-    const logger = LoggerFactory.generic();
-
-    logger.info('Configuration loaded', {
-      nodeEnv: cachedConfig.nodeEnv,
-      logLevel: cachedConfig.logging.level,
-      webhookPort: cachedConfig.webhook.port,
-      watchedRepositories: cachedConfig.webhook.watchedRepositories,
-      watchedLabels: cachedConfig.webhook.watchedLabels,
-    });
 
     return cachedConfig;
   } catch (error) {
+    if (error instanceof ConfigurationError) throw error;
     throw new ConfigurationError(
-      `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      { error }
+      `Failed to load configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
 }
 
 /**
- * Get current configuration (throws if not loaded)
+ * Reset cached config (tests only)
  */
-export function getConfig(): AppConfig {
-  if (!cachedConfig) {
-    throw new ConfigurationError('Configuration not loaded. Call loadConfig() first.');
-  }
-
-  return cachedConfig;
+export function resetConfig(): void {
+  cachedConfig = null;
 }

@@ -2,25 +2,24 @@
  * Application constants
  */
 
-export const CONSTANTS = {
-  // Discord
-  DISCORD_COLORS: {
-    PRIMARY: 0x5865f2,
-    SUCCESS: 0x57f287,
-    ERROR: 0xed4245,
-    WARNING: 0xfee75c,
-    INFO: 0x5865f2,
-  },
+export const BOT_NAME = 'PPTB Agent';
 
-  // Bot metadata
-  BOT_VERSION: '1.0.0',
-  BOT_NAME: 'PPTB Discord Assistant',
+export const COLORS = {
+  PRIMARY: 0x5865f2,
+  SUCCESS: 0x57f287,
+  ERROR: 0xed4245,
+  WARNING: 0xfee75c,
+  INFO: 0x3498db,
+  NEUTRAL: 0x95a5a6,
+} as const;
 
-  // Limits
-  MAX_EMBED_DESCRIPTION_LENGTH: 4096,
-  MAX_EMBED_FIELDS: 25,
-  MAX_EMBED_FIELD_VALUE_LENGTH: 1024,
-
-  // Timeouts
-  COMMAND_TIMEOUT_MS: 30000,
+// Discord API limits: https://discord.com/developers/docs/resources/message#embed-object-embed-limits
+export const DISCORD_LIMITS = {
+  MESSAGE_CONTENT: 2000,
+  EMBED_TITLE: 256,
+  EMBED_DESCRIPTION: 4096,
+  EMBED_FIELD_NAME: 256,
+  EMBED_FIELD_VALUE: 1024,
+  EMBED_FIELDS: 25,
+  THREAD_NAME: 100,
 } as const;

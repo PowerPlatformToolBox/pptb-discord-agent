@@ -3,17 +3,14 @@
     "target": "ES2022",
     "module": "commonjs",
     "lib": ["ES2022", "DOM"],
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -27,6 +24,6 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node"]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+  "include": ["src/**/*", "api/**/*", "tests/**/*", "jest.config.ts"],
+  "exclude": ["node_modules"]
 }

@@ -1,172 +1,47 @@
 /**
- * Application logger using Winston
+ * Structured JSON logger for Vercel function logs.
  *
- * **Efficiency Notes:**
- * - Console-only logging by default (no file I/O overhead)
- * - File logging explicitly disabled unless ENABLE_FILE_LOGS=true
- * - Singleton pattern ensures one logger instance
- * - Child loggers cached per module name
- *
- * **Usage Patterns:**
- * - Services/Classes: Use module name for better tracing
- *   ```typescript
- *   private readonly logger = getLogger('MyService');
- *   ```
- * - Event handlers: Use descriptive module name
- *   ```typescript
- *   const logger = getLogger('InteractionCreate');
- *   ```
- * - One-off functions: Use without module name
- *   ```typescript
- *   const logger = getLogger();
- *   ```
+ * Reads LOG_LEVEL from process.env directly; must not call loadConfig() (avoids circular deps
+ * and lets config errors themselves be logged).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { createLogger, format, transports, type Logger } from 'winston';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogMeta = Record<string, unknown>;
 
-const { combine, timestamp, printf, errors, splat, metadata, colorize } = format;
+const LEVELS: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
-let loggerInstance: Logger | null = null;
-const childLoggers: Record<string, Logger> = {};
-
-function createAppLogger(): Logger {
-  // Console-only logging by default; file logging disabled unless explicitly enabled via env
-  const env = process.env.NODE_ENV ?? 'development';
-  const enableFileLogs = process.env.ENABLE_FILE_LOGS === 'true'; // Disabled by default
-  const level = env === 'development' ? 'debug' : 'info';
-
-  let logDir = '';
-  if (enableFileLogs) {
-    // Use LOG_DIR env var or default to ./logs
-    logDir = process.env.LOG_DIR
-      ? path.resolve(process.env.LOG_DIR)
-      : path.resolve(process.cwd(), 'logs');
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
-  }
-
-  const consoleFormat = combine(
-    colorize(),
-    timestamp(),
-    errors({ stack: true }),
-    splat(),
-    metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
-    printf(({ timestamp: ts, level: lv, message, metadata: md, stack }) => {
-      const meta = Object.keys(md || {}).length ? ` ${JSON.stringify(md)}` : '';
-      const stackMsg = stack ? `\n${stack}` : '';
-      return `${ts} [${lv}]: ${message}${meta}${stackMsg}`;
-    })
-  );
-
-  const fileFormat = combine(
-    timestamp(),
-    errors({ stack: true }),
-    splat(),
-    metadata({ fillExcept: ['message', 'level', 'timestamp'] }),
-    format.json()
-  );
-
-  const transportsList: (transports.ConsoleTransportInstance | transports.FileTransportInstance)[] =
-    [new transports.Console({ format: consoleFormat })];
-
-  if (enableFileLogs) {
-    transportsList.push(
-      new transports.File({ filename: path.join(logDir, 'error.log'), level: 'error' }),
-      new transports.File({ filename: path.join(logDir, 'combined.log') })
-    );
-  }
-
-  return createLogger({
-    level,
-    format: fileFormat,
-    transports: transportsList,
-    exitOnError: false,
-  });
+export interface Logger {
+  debug(message: string, meta?: LogMeta): void;
+  info(message: string, meta?: LogMeta): void;
+  warn(message: string, meta?: LogMeta): void;
+  error(message: string, meta?: LogMeta): void;
 }
 
-/**
- * Returns a singleton Winston logger instance.
- *
- * @param moduleName - Optional module identifier for better log tracing
- * @returns Logger instance (root or child logger if moduleName provided)
- *
- * @example
- * // In services/classes - use module name
- * private readonly logger = getLogger('GitHubService');
- *
- * @example
- * // In event handlers - use descriptive name
- * const logger = getLogger('MessageReactionAdd');
- *
- * @example
- * // In one-off functions - no module name needed
- * const logger = getLogger();
- */
-export function getLogger(moduleName?: string): Logger {
-  if (!loggerInstance) {
-    loggerInstance = createAppLogger();
-  }
-
-  if (!moduleName) {
-    return loggerInstance;
-  }
-
-  if (!childLoggers[moduleName]) {
-    childLoggers[moduleName] = loggerInstance.child({ module: moduleName });
-  }
-
-  return childLoggers[moduleName];
+function currentLevel(): LogLevel {
+  const level = process.env.LOG_LEVEL as LogLevel | undefined;
+  return level && level in LEVELS ? level : 'info';
 }
 
-/**
- * Logger factory for consistent initialization patterns
- *
- * This factory provides semantic methods for creating loggers with appropriate context.
- * All codebase loggers now use LoggerFactory for consistency and maintainability.
- *
- * Usage examples:
- * - Services: `LoggerFactory.forService('MyService')`
- * - Events: `LoggerFactory.forEvent('MessageCreate')`
- * - Commands: `LoggerFactory.forCommand('ping')`
- * - Webhooks: `LoggerFactory.forWebhook('Release')`
- * - Generic: `LoggerFactory.generic()` (use sparingly for non-categorized contexts)
- */
-export class LoggerFactory {
-  /**
-   * Create a logger for a service class
-   */
-  public static forService(serviceName: string): Logger {
-    return getLogger(serviceName);
-  }
+function write(level: LogLevel, scope: string, message: string, meta?: LogMeta): void {
+  if (LEVELS[level] < LEVELS[currentLevel()]) return;
+  const line = JSON.stringify({ level, scope, message, ...meta, time: new Date().toISOString() });
+  if (level === 'error') console.error(line);
+  else if (level === 'warn') console.warn(line);
+  else console.log(line);
+}
 
-  /**
-   * Create a logger for an event handler
-   */
-  public static forEvent(eventName: string): Logger {
-    return getLogger(eventName);
-  }
+const loggers = new Map<string, Logger>();
 
-  /**
-   * Create a logger for a command handler
-   */
-  public static forCommand(commandName: string): Logger {
-    return getLogger(`Command:${commandName}`);
+export function getLogger(scope = 'app'): Logger {
+  let logger = loggers.get(scope);
+  if (!logger) {
+    logger = {
+      debug: (message, meta) => write('debug', scope, message, meta),
+      info: (message, meta) => write('info', scope, message, meta),
+      warn: (message, meta) => write('warn', scope, message, meta),
+      error: (message, meta) => write('error', scope, message, meta),
+    };
+    loggers.set(scope, logger);
   }
-
-  /**
-   * Create a logger for a webhook handler
-   */
-  public static forWebhook(webhookType: string): Logger {
-    return getLogger(`Webhook:${webhookType}`);
-  }
-
-  /**
-   * Create a generic logger (use sparingly)
-   */
-  public static generic(): Logger {
-    return getLogger();
-  }
+  return logger;
 }

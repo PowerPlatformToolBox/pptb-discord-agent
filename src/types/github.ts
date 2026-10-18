@@ -1,23 +1,17 @@
 /**
- * GitHub-related type definitions
+ * GitHub API type definitions
  */
 
 export interface GitHubIssue {
   number: number;
   title: string;
-  body?: string;
   html_url: string;
-  state: string;
-  created_at: string;
-  labels: Array<{ name: string }>;
 }
 
-export interface GitHubRepository {
+export interface GitHubRepositoryInfo {
   name: string;
-  description?: string;
-  html_url: string;
+  full_name: string;
   stargazers_count: number;
-  language?: string;
 }
 
 export interface CreateIssueParams {
@@ -25,7 +19,6 @@ export interface CreateIssueParams {
   title: string;
   body: string;
   labels?: string[];
-  owner?: string; // Optional owner override (defaults to configured org)
 }
 
 export interface GitHubServiceResult<T> {
@@ -35,7 +28,6 @@ export interface GitHubServiceResult<T> {
 }
 
 export interface CreateIssueResult {
-  issue: GitHubIssue;
   url: string;
   number: number;
 }
