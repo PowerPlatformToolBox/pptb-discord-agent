@@ -9,7 +9,9 @@ PPTB Agent posts to Discord when things happen on the platform:
 - discussion threads for labeled issues and PRs,
 - a live star counter.
 
-It also provides the `/ping` and `/create-issue` slash commands.
+It also provides `/help`, `/about`, `/ping`, and `/create-issue` slash commands. `/help` lists the
+registered commands and official links; `/about` explains the bot and its offline badge. Both
+reply privately (ephemerally), without external API calls.
 
 ## Documentation
 
@@ -20,6 +22,7 @@ It also provides the `/ping` and `/create-issue` slash commands.
 | [Notifications](docs/NOTIFICATIONS.md) | See the catalogue, turn notifications on/off, route to channels, send events, add new ones |
 | [Integrations](docs/INTEGRATIONS.md) | Wire up pptb-web and tool-management (includes ready-to-use prompts) |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Diagnose missing messages, 4xx/5xx responses and permissions |
+| [Improvement roadmap](docs/ROADMAP.md) | Track completed capabilities and prioritized improvements within Vercel Hobby |
 
 **First-time setup order:**
 1. [Discord setup](docs/DISCORD_SETUP.md) steps 1–5.
@@ -33,7 +36,7 @@ It also provides the `/ping` and `/create-issue` slash commands.
 pptb-web / tool-management ──signed POST──▶ /api/events ─┐
 GitHub org webhook ─────────signed POST──▶ /api/github ──┼──▶ notification catalogue ──▶ Discord REST API
 Vercel Cron (daily) ───────────────GET───▶ /api/cron/stars┘      (validate → render → route)
-Discord slash commands ─────signed POST──▶ /api/interactions ──▶ /ping, /create-issue
+Discord slash commands ─────signed POST──▶ /api/interactions ──▶ /help, /about, /ping, /create-issue
 ```
 
 - Every inbound request is signature-checked: Ed25519 for Discord, HMAC for GitHub and the platform
@@ -44,6 +47,10 @@ Discord slash commands ─────signed POST──▶ /api/interactions ─
   with `NOTIFICATION_ROUTES`, both without code changes.
 - The bot appears **offline** in Discord because it runs serverless with no gateway connection.
   This is expected.
+
+After deploying command changes to Vercel, run `pnpm deploy-commands` with the matching
+application and guild configuration to register them in Discord. Deployment alone does not
+register new commands; see [Discord setup](docs/DISCORD_SETUP.md#6-connect-slash-commands-after-deploying).
 
 ## Development
 

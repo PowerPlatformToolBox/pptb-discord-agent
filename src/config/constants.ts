@@ -4,6 +4,12 @@
 
 export const BOT_NAME = 'PPTB Agent';
 
+export const PPTB_LINKS = {
+  website: 'https://www.powerplatformtoolbox.com',
+  docs: 'https://docs.powerplatformtoolbox.com',
+  support: 'https://github.com/PowerPlatformToolBox/desktop-app/issues',
+} as const;
+
 export const COLORS = {
   PRIMARY: 0x5865f2,
   SUCCESS: 0x57f287,

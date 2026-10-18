@@ -1,11 +1,19 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { describe, expect, it, jest } from '@jest/globals';
 import { waitUntil } from '@vercel/functions';
+import {
+  InteractionResponseType,
+  MessageFlags,
+  type APIInteractionResponseChannelMessageWithSource,
+} from 'discord-api-types/v10';
 import { handleGitHubWebhook } from '../src/app/githubWebhook';
 import { handleHealth } from '../src/app/health';
 import { handleInteraction } from '../src/app/interactions';
 import { handlePlatformEvent } from '../src/app/platformEvents';
 import { handleStarsCron } from '../src/app/starsCron';
+import { COMMANDS, findCommand } from '../src/commands';
+import { pingCommand } from '../src/commands/ping';
+import { BOT_NAME, DISCORD_LIMITS, PPTB_LINKS } from '../src/config/constants';
 import { getNotification } from '../src/notifications/catalog';
 import { hmacSha256Hex } from '../src/security/signatures';
 import { TEST_ENV, useTestEnv } from './testEnv';
@@ -216,6 +224,105 @@ describe('POST /api/interactions', () => {
     const body = (await response.json()) as { type: number; data: { content: string } };
     expect(body.type).toBe(4);
     expect(body.data.content).toContain('Pong');
+  });
+
+  it.each(['help', 'about'])(
+    'replies to /%s privately without network or deferred work',
+    async (name) => {
+      process.env.DISCORD_PUBLIC_KEY = publicKeyHex;
+      const calls = stubFetch();
+      const response = await handleInteraction(
+        interactionRequest({
+          type: 2,
+          id: '1234567890123456789',
+          token: 'tok',
+          data: { type: 1, name },
+        })
+      );
+      const body = (await response.json()) as APIInteractionResponseChannelMessageWithSource;
+
+      expect(response.status).toBe(200);
+      expect(body.type).toBe(InteractionResponseType.ChannelMessageWithSource);
+      expect(body.data?.flags).toBe(MessageFlags.Ephemeral);
+      expect(body.data?.allowed_mentions).toEqual({ parse: [] });
+      expect(body.data?.content).toContain(BOT_NAME);
+      expect(body.data?.content).toContain('offline');
+      expect(body.data?.content).toContain('Gateway connection');
+      expect(body.data?.content).toContain('`/ping`');
+      expect(body.data?.content?.length).toBeGreaterThan(0);
+      expect(body.data?.content?.length).toBeLessThanOrEqual(DISCORD_LIMITS.MESSAGE_CONTENT);
+      for (const url of Object.values(PPTB_LINKS)) {
+        expect(body.data?.content).toContain(url);
+      }
+      expect(findCommand(name)?.definition.name).toBe(name);
+      expect(waitUntil).not.toHaveBeenCalled();
+      expect(calls).toHaveLength(0);
+    }
+  );
+
+  it('builds /help from the current command registry, including updated descriptions', async () => {
+    process.env.DISCORD_PUBLIC_KEY = publicKeyHex;
+    jest.replaceProperty(
+      pingCommand.definition,
+      'description',
+      'Check whether the webhook brain responds'
+    );
+    const response = await handleInteraction(
+      interactionRequest({
+        type: 2,
+        id: '1234567890123456789',
+        token: 'tok',
+        data: { type: 1, name: 'help' },
+      })
+    );
+    const body = (await response.json()) as APIInteractionResponseChannelMessageWithSource;
+    const listedCommands = [...(body.data?.content ?? '').matchAll(/^- `\/([^`]+)` - (.+)$/gm)].map(
+      (match) => [match[1], match[2]]
+    );
+
+    expect(listedCommands).toEqual(
+      COMMANDS.map(({ definition }) => [definition.name, definition.description])
+    );
+    expect(new Set(COMMANDS.map(({ definition }) => definition.name)).size).toBe(COMMANDS.length);
+  });
+
+  it('explains /about without presenting the bot as a chatbot or online service', async () => {
+    process.env.DISCORD_PUBLIC_KEY = publicKeyHex;
+    const response = await handleInteraction(
+      interactionRequest({
+        type: 2,
+        id: '1234567890123456789',
+        token: 'tok',
+        data: { type: 1, name: 'about' },
+      })
+    );
+    const body = (await response.json()) as APIInteractionResponseChannelMessageWithSource;
+
+    expect(body.data?.content).toContain('Unlike your last solution import');
+    expect(body.data?.content).toContain('stateless Vercel Functions on the Hobby plan');
+    expect(body.data?.content).toContain('Discord REST API');
+    expect(body.data?.content).toContain('Not an AI chatbot');
+    expect(body.data?.content).toContain('`/help`');
+  });
+
+  it.each(['help', 'about'])('rejects tampered /%s interactions before executing', async (name) => {
+    process.env.DISCORD_PUBLIC_KEY = publicKeyHex;
+    const calls = stubFetch();
+    const response = await handleInteraction(
+      interactionRequest(
+        {
+          type: 2,
+          id: '1234567890123456789',
+          token: 'tok',
+          data: { type: 1, name },
+        },
+        true
+      )
+    );
+
+    expect(response.status).toBe(401);
+    expect(waitUntil).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
   });
 
   it('defers /create-issue and edits the reply with the result', async () => {
