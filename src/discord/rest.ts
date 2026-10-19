@@ -7,6 +7,7 @@ import {
   Routes,
   ThreadAutoArchiveDuration,
   type APIChannel,
+  type APIGuildMember,
   type APIMessage,
   type APIThreadChannel,
   type RESTGetAPIGuildThreadsResult,
@@ -102,6 +103,27 @@ export class DiscordRestClient {
         auto_archive_duration: ThreadAutoArchiveDuration.OneWeek,
       },
     });
+  }
+
+  public async listGuildMembers(guildId: string): Promise<APIGuildMember[]> {
+    const members: APIGuildMember[] = [];
+    let after: string | undefined;
+
+    for (;;) {
+      const query = new URLSearchParams({ limit: '1000' });
+      if (after) query.set('after', after);
+      const page = await this.request<APIGuildMember[]>(
+        'GET',
+        `${Routes.guildMembers(guildId)}?${query.toString()}`
+      );
+      members.push(...page);
+      if (page.length < 1000) return members;
+      after = page[page.length - 1]?.user.id;
+    }
+  }
+
+  public addThreadMember(threadId: string, userId: string): Promise<void> {
+    return this.request('PUT', Routes.threadMembers(threadId, userId));
   }
 
   public async listThreads(guildId: string, channelId: string): Promise<APIThreadChannel[]> {

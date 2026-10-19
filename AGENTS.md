@@ -72,6 +72,7 @@ Source of truth is `src/config/environment.ts`; `.env.example` is the documented
 | `DISCORD_PUBLIC_KEY` | Application public key (interaction signatures) |
 | `DISCORD_GUILD_ID` | Guild (command registration, thread lookup) |
 | `DISCORD_CHANNEL_ADMIN` / `_TOOLS` / `_RELEASES` / `_INSIDER` / `_DISCUSSIONS` / `_STARS` | Channel IDs for the six aliases |
+| `DISCUSSION_THREAD_ROLE_IDS` | Optional, comma-separated Discord role IDs to auto-add their members to GitHub discussion threads |
 | `GITHUB_TOKEN` | GitHub API token (issues, stars sync) |
 | `GITHUB_ORG` | GitHub organization; webhooks from other owners are ignored |
 | `GITHUB_WEBHOOK_SECRET` | GitHub webhook HMAC secret |

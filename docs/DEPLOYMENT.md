@@ -57,6 +57,7 @@ The token is used by `/create-issue` and the daily stars sync.
    | `GITHUB_WEBHOOK_SECRET`, `PLATFORM_EVENTS_SECRET`, `CRON_SECRET` | Step 1 |
    | `STARS_REPOSITORY` | `desktop-app` |
    | `WATCHED_LABELS` | `DiscordDiscussion` |
+   | `DISCUSSION_THREAD_ROLE_IDS` | Optional; comma-separated role IDs to add their members to discussion threads |
    | `LOG_LEVEL` | `info` (optional) |
    | `DISABLED_NOTIFICATIONS`, `NOTIFICATION_ROUTES` | Optional; leave empty to start |
 

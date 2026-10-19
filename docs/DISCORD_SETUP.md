@@ -15,6 +15,7 @@ Keep a scratch note open. You will collect values for these environment variable
 | Bot token       | `DISCORD_BOT_TOKEN`  |
 | Server ID       | `DISCORD_GUILD_ID`   |
 | Six channel IDs | `DISCORD_CHANNEL_*`  |
+| Discussion roles (optional) | `DISCUSSION_THREAD_ROLE_IDS` |
 
 ## How the bot works (read once)
 
@@ -53,7 +54,9 @@ You need it to copy IDs.
 2. Click **Reset Token**, confirm, and copy the token → `DISCORD_BOT_TOKEN`.
    - Treat it like a password. Anyone with it can act as the bot.
    - If it leaks, click **Reset Token** again and update the value in Vercel.
-3. Under **Privileged Gateway Intents**, leave all three **off**. The bot doesn't need them.
+3. Under **Privileged Gateway Intents**, enable **Server Members Intent** if you configure
+   `DISCUSSION_THREAD_ROLE_IDS`; the bot uses it to find members with those roles. Leave the other
+   intents off.
 4. Optional: turn **Public Bot** off, so only you can add it to servers.
 
 ## 4. Invite the bot to the server
@@ -63,12 +66,12 @@ You need it to copy IDs.
 3. Open this URL in your browser, replacing `YOUR_CLIENT_ID` with your Application ID:
 
    ```text
-   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot%20applications.commands&permissions=309237730320
+   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot%20applications.commands&permissions=326417599504
    ```
 
 4. Pick the Power Platform ToolBox server and click **Authorize**.
 
-The permissions in that link (`309237730320`) are exactly what the bot uses:
+The permissions in that link (`326417599504`) include what the bot uses:
 
 | Permission               | Why                                                                         |
 | ------------------------ | --------------------------------------------------------------------------- |
@@ -78,6 +81,7 @@ The permissions in that link (`309237730320`) are exactly what the bot uses:
 | Read Message History     | Find existing discussion threads, to avoid duplicates                       |
 | Create Public Threads    | GitHub discussion threads                                                   |
 | Send Messages in Threads | First message in each discussion thread                                     |
+| Manage Threads           | Add configured role members to discussion threads                           |
 | Manage Channels          | Rename the stars voice channel. You'll limit this to that channel in step 5 |
 
 Copy the server ID: right-click the server icon → **Copy Server ID** → `DISCORD_GUILD_ID`.
@@ -106,11 +110,14 @@ For each channel: **Edit Channel** → **Permissions** → **Add members or role
 
 - All text channels: **View Channel**, **Send Messages**, **Embed Links**.
 - `discussions` channel, additionally: **Create Public Threads**, **Send Messages in Threads**,
-  **Read Message History**.
+  **Read Message History**, **Manage Threads** if `DISCUSSION_THREAD_ROLE_IDS` is configured.
 - `admin` channel: it's private, so the bot must be added explicitly, or it gets
   `403 Missing Access`.
 - `stars` voice channel: **View Channel** and **Manage Channel**. Then, under **Server Settings →
   Roles → PPTB Agent**, turn off **Manage Channels**, so the bot can only rename this one channel.
+- If `DISCUSSION_THREAD_ROLE_IDS` is configured, under **Server Settings → Roles → PPTB Agent**,
+  turn off **Manage Threads** at the server level; the channel override above grants it only in
+  `discussions`.
 
 ## 6. Connect slash commands (after deploying)
 

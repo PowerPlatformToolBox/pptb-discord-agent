@@ -66,17 +66,38 @@ export async function dispatch(
     case 'thread': {
       const threads = await rest.listThreads(config.discord.guildId, channelId);
       const existing = threads.find((thread) => thread.name?.startsWith(delivery.dedupeKey));
+      const thread =
+        existing ??
+        (await rest.startThread(
+          channelId,
+          truncate(delivery.threadName, DISCORD_LIMITS.THREAD_NAME)
+        ));
       if (existing) {
         logger.info('Thread already exists', { key, threadId: existing.id });
-        return { key, status: 'skipped', channelId, reason: 'thread-exists' };
+      } else {
+        await rest.sendMessage(thread.id, toBody(delivery.message));
+        logger.info('Thread created', { key, channelId, threadId: thread.id });
       }
-      const thread = await rest.startThread(
-        channelId,
-        truncate(delivery.threadName, DISCORD_LIMITS.THREAD_NAME)
-      );
-      await rest.sendMessage(thread.id, toBody(delivery.message));
-      logger.info('Thread created', { key, channelId, threadId: thread.id });
-      return { key, status: 'sent', channelId };
+
+      if (config.discord.discussionRoleIds.length > 0) {
+        const members = await rest.listGuildMembers(config.discord.guildId);
+        const roleIds = new Set(config.discord.discussionRoleIds);
+        const matchingMembers = members.filter((member) =>
+          member.roles.some((roleId) => roleIds.has(roleId))
+        );
+        for (const member of matchingMembers) {
+          await rest.addThreadMember(thread.id, member.user.id);
+        }
+        logger.info('Added role members to discussion thread', {
+          key,
+          threadId: thread.id,
+          memberCount: matchingMembers.length,
+        });
+      }
+
+      return existing
+        ? { key, status: 'skipped', channelId, reason: 'thread-exists' }
+        : { key, status: 'sent', channelId };
     }
 
     case 'channel-name': {

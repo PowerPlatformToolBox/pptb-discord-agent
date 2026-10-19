@@ -26,6 +26,11 @@ describe('validateEnvironment', () => {
     expect(() => validateEnvironment()).toThrow(/DISCORD_CHANNEL_TOOLS/);
   });
 
+  it('rejects invalid discussion thread role IDs', () => {
+    process.env.DISCUSSION_THREAD_ROLE_IDS = 'not-a-role-id';
+    expect(() => validateEnvironment()).toThrow(/DISCUSSION_THREAD_ROLE_IDS/);
+  });
+
   it('rejects a short PLATFORM_EVENTS_SECRET', () => {
     process.env.PLATFORM_EVENTS_SECRET = 'short';
     expect(() => validateEnvironment()).toThrow(/PLATFORM_EVENTS_SECRET/);
@@ -38,8 +43,10 @@ describe('loadConfig', () => {
   it('maps channels, lists and optional overrides', () => {
     process.env.DISABLED_NOTIFICATIONS = 'verify.*, tool.deleted';
     process.env.NOTIFICATION_ROUTES = 'tool.update=releases,verify.approved=123456789012345678';
+    process.env.DISCUSSION_THREAD_ROLE_IDS = '200000000000000001, 200000000000000002';
     const config = loadConfig();
     expect(config.discord.channels.admin).toBe('100000000000000001');
+    expect(config.discord.discussionRoleIds).toEqual(['200000000000000001', '200000000000000002']);
     expect(config.github.watchedLabels).toEqual(['DiscordDiscussion', 'feature']);
     expect(config.notifications.disabled).toEqual(['verify.*', 'tool.deleted']);
     expect(config.notifications.routes).toEqual({

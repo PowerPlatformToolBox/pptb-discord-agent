@@ -13,6 +13,7 @@ export interface AppConfig {
     publicKey: string;
     guildId: string;
     channels: Record<ChannelAlias, string>;
+    discussionRoleIds: string[];
   };
   github: {
     token: string;
@@ -75,6 +76,7 @@ export function loadConfig(): AppConfig {
         clientId: env.DISCORD_CLIENT_ID,
         publicKey: env.DISCORD_PUBLIC_KEY,
         guildId: env.DISCORD_GUILD_ID,
+        discussionRoleIds: parseList(env.DISCUSSION_THREAD_ROLE_IDS),
         channels: {
           admin: env.DISCORD_CHANNEL_ADMIN,
           tools: env.DISCORD_CHANNEL_TOOLS,

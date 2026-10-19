@@ -26,6 +26,17 @@ const environmentSchema = z.object({
   DISCORD_CHANNEL_INSIDER: snowflake('DISCORD_CHANNEL_INSIDER'),
   DISCORD_CHANNEL_DISCUSSIONS: snowflake('DISCORD_CHANNEL_DISCUSSIONS'),
   DISCORD_CHANNEL_STARS: snowflake('DISCORD_CHANNEL_STARS'),
+  DISCUSSION_THREAD_ROLE_IDS: z
+    .string()
+    .optional()
+    .refine(
+      (value) =>
+        !value ||
+        value
+          .split(',')
+          .every((roleId) => /^\d{17,20}$/.test(roleId.trim()) || roleId.trim().length === 0),
+      'DISCUSSION_THREAD_ROLE_IDS must be comma-separated Discord IDs (17-20 digits)'
+    ),
 
   // GitHub
   GITHUB_TOKEN: requiredString('GITHUB_TOKEN'),
