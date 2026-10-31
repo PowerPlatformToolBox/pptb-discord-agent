@@ -92,7 +92,20 @@ When adding or removing a variable, update these together:
 - this table
 - `docs/DEPLOYMENT.md`
 
+## Skills
+
+Step-by-step task guides live in `.agents/skills/<name>/SKILL.md`. If your tool does not load them
+automatically, read the matching file before starting the task.
+
+| Skill | Use it to |
+| --- | --- |
+| `add-notification` | Add or change a notification card, or route a GitHub or platform event to it |
+| `add-slash-command` | Add or change a slash command |
+| `test-and-deploy` | Run the checks, try events locally, deploy and diagnose delivery |
+
 ## Adding a notification
+
+The `add-notification` skill has the full guide. In short:
 
 1. Define it with `defineNotification` in `src/notifications/events/<category>.ts`. Include a key
    such as `category.event-name`, a zod schema, `example`, default `channel`, `source` and a
@@ -101,6 +114,15 @@ When adding or removing a variable, update these together:
 3. GitHub-sourced events also need a mapping in `src/sources/github/router.ts`.
 4. Update the tables in `docs/NOTIFICATIONS.md`. The catalogue tests render every example and
    enforce Discord limits.
+
+## Adding an endpoint
+
+1. Add the handler to `src/app/<name>.ts`. Verify the source's signature on the raw body before
+   parsing it.
+2. Add a one-line adapter in `api/<name>.ts`. Vercel maps the file to the same path.
+3. Add the path to `ROUTES` in `src/app/routes.ts` so `pnpm dev` serves it.
+4. Add tests to `tests/handlers.test.ts`, then update the Endpoints tables here and in
+   `docs/DEPLOYMENT.md`.
 
 ## Conventions
 
@@ -124,4 +146,5 @@ When adding or removing a variable, update these together:
   redelivery.
 - Vercel Hobby cron runs at most once a day.
 - After changing a command definition, run `pnpm deploy-commands`.
+- Text files use LF on every platform (`.gitattributes`); Prettier fails on CRLF.
 - Never commit `.env` or tokens.

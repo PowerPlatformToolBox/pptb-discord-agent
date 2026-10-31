@@ -17,6 +17,7 @@ repository: commands, layout, endpoints, environment variables, conventions and 
   redirects them. Neither needs a code change.
 - Docs for humans are in `docs/`: `DISCORD_SETUP`, `DEPLOYMENT`, `NOTIFICATIONS`, `INTEGRATIONS`,
   `TROUBLESHOOTING`.
+- Task guides for common changes are in `.agents/skills/`.
 
 ## Non-negotiables
 
