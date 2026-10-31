@@ -2,11 +2,12 @@
  * Product release notifications (producer: GitHub `release` webhooks)
  */
 
+import type { APIEmbedField } from 'discord-api-types/v10';
 import { z } from 'zod';
-import { DISCORD_LIMITS } from '../../config/constants';
+import { COLORS, DISCORD_LIMITS } from '../../config/constants';
 import type { MessagePayload } from '../../discord/format';
 import { defineNotification } from '../types';
-import { httpUrl } from '../shared';
+import { bulletList, field, httpUrl, link } from '../shared';
 
 const releaseSchema = z.object({
   repository: z.string().min(1),
@@ -19,7 +20,7 @@ const releaseSchema = z.object({
 type ReleaseData = z.infer<typeof releaseSchema>;
 
 /**
- * List items under a "What's New" / "What's Changed" heading.
+ * List items under a "What's New" / "What's Changed" heading (optionally led by an emoji).
  */
 export function extractWhatsNew(body: string): string[] {
   const items: string[] = [];
@@ -27,7 +28,7 @@ export function extractWhatsNew(body: string): string[] {
 
   for (const line of body.split('\n')) {
     const trimmed = line.trim();
-    if (/^#{1,3}\s+What'?s\s+(New|Changed)/i.test(trimmed)) {
+    if (/^#{1,3}\s+(?:[^\w\s]+\s*)?What['’]?s\s+(New|Changed)/iu.test(trimmed)) {
       inSection = true;
       continue;
     }
@@ -80,6 +81,109 @@ export function renderRelease(heading: string, release: ReleaseData): MessagePay
   return { content: `${head}${sectionHeader}${kept.join('\n')}${more}${tail}` };
 }
 
+const insiderSchema = releaseSchema.extend({
+  branch: z.string().optional(),
+  // Added by src/sources/github/enrich.ts; without them the card lists the release notes' commits.
+  previousTag: z.string().optional(),
+  previousUrl: httpUrl.optional(),
+  compareUrl: httpUrl.optional(),
+  totalCommits: z.number().int().nonnegative().optional(),
+  commits: z
+    .array(
+      z.object({
+        sha: z.string().regex(/^[0-9a-f]{7,40}$/i),
+        message: z.string(),
+        url: httpUrl,
+      })
+    )
+    .max(250)
+    .optional(),
+});
+
+type InsiderData = z.infer<typeof insiderSchema>;
+
+/** Commits listed on the card before collapsing into "…and N more". */
+export const MAX_INSIDER_COMMITS = 15;
+
+function commitLine(sha: string, message: string, url: string, repoUrl: string): string {
+  return `[\`${sha.slice(0, 7)}\`](${url}) ${linkPullRequests(message, repoUrl)}`.trim();
+}
+
+/**
+ * Commit lines, newest first: from the GitHub compare lookup, else the release notes'
+ * "- <sha> <message>" items.
+ */
+function insiderCommitLines(insider: InsiderData): string[] {
+  if (insider.commits) {
+    return insider.commits.map((commit) =>
+      commitLine(commit.sha, commit.message, commit.url, insider.repositoryUrl)
+    );
+  }
+  return extractWhatsNew(insider.body).map((item) => {
+    const text = item.slice(2).trim();
+    const match = /^([0-9a-f]{7,40})\s+(.*)$/i.exec(text);
+    if (!match) return linkPullRequests(text, insider.repositoryUrl);
+    const [, sha = '', message = ''] = match;
+    return commitLine(
+      sha,
+      message,
+      `${insider.repositoryUrl}/commit/${sha}`,
+      insider.repositoryUrl
+    );
+  });
+}
+
+export function renderInsider(insider: InsiderData): MessagePayload {
+  const version = insider.tagName.replace(/^v/, '');
+  const lines = insiderCommitLines(insider);
+  const total = Math.max(insider.totalCommits ?? lines.length, lines.length);
+
+  const moreNote = (omitted: number): string => {
+    if (omitted <= 0) return '';
+    const text = `…and ${omitted} more`;
+    return insider.compareUrl ? link(text, insider.compareUrl) : text;
+  };
+
+  const kept: string[] = [];
+  let used = 0;
+  for (const line of lines.slice(0, MAX_INSIDER_COMMITS)) {
+    const reserve = moreNote(total - kept.length - 1).length + 1;
+    if (used + line.length + 3 + reserve > DISCORD_LIMITS.EMBED_DESCRIPTION) break;
+    kept.push(line);
+    used += line.length + 3;
+  }
+
+  const empty = insider.commits
+    ? 'No new commits since the previous build.'
+    : 'No commit details in the release notes.';
+  const description =
+    [bulletList(kept), moreNote(total - kept.length)].filter(Boolean).join('\n') || empty;
+  const commitCount = `${total} ${total === 1 ? 'commit' : 'commits'}`;
+
+  return {
+    embeds: [
+      {
+        title: `🚧 Insider pre-release: ${version}`,
+        url: insider.url,
+        description,
+        color: COLORS.WARNING,
+        fields: [
+          field('Version', version),
+          field('Branch', insider.branch),
+          field('Commits', total > 0 ? link(commitCount, insider.compareUrl) : undefined),
+          field(
+            'Previous build',
+            insider.previousTag && link(insider.previousTag.replace(/^v/, ''), insider.previousUrl)
+          ),
+          field('Downloads', link('Release page', insider.url)),
+        ].filter((item): item is APIEmbedField => item !== null),
+        footer: { text: 'Testing purposes only. Not for production use.' },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
 const EXAMPLE_RELEASE: ReleaseData = {
   repository: 'desktop-app',
   repositoryUrl: 'https://github.com/PowerPlatformToolBox/desktop-app',
@@ -104,6 +208,8 @@ export const pptbNewRelease = defineNotification({
   },
 });
 
+const DESKTOP_APP_URL = 'https://github.com/PowerPlatformToolBox/desktop-app';
+
 export const pptbInsider = defineNotification({
   key: 'pptb.insider',
   category: 'PPTB',
@@ -112,12 +218,32 @@ export const pptbInsider = defineNotification({
   enabled: true,
   channel: 'insider',
   source: 'github',
-  schema: releaseSchema,
-  example: { ...EXAMPLE_RELEASE, tagName: 'v1.3.0-insider.1' },
-  delivery: {
-    kind: 'message',
-    render: (release) => renderRelease(':construction:  Insider Pre-Release', release),
+  schema: insiderSchema,
+  example: {
+    repository: 'desktop-app',
+    repositoryUrl: DESKTOP_APP_URL,
+    tagName: 'v1.2.8-dev.20261030',
+    body: "## 📋 What's New\n\n- 152f482 [Fix] Show colour SVG tool icons (#738)",
+    url: `${DESKTOP_APP_URL}/releases/tag/v1.2.8-dev.20261030`,
+    branch: 'dev',
+    previousTag: 'v1.2.8-dev.20261027',
+    previousUrl: `${DESKTOP_APP_URL}/releases/tag/v1.2.8-dev.20261027`,
+    compareUrl: `${DESKTOP_APP_URL}/compare/v1.2.8-dev.20261027...v1.2.8-dev.20261030`,
+    totalCommits: 2,
+    commits: [
+      {
+        sha: '152f4820000000000000000000000000000000aa',
+        message: '[Fix] Show colour SVG tool icons and load icons for local tools (#738)',
+        url: `${DESKTOP_APP_URL}/commit/152f4820000000000000000000000000000000aa`,
+      },
+      {
+        sha: '6351f130000000000000000000000000000000bb',
+        message: 'docs: update known issues section in README',
+        url: `${DESKTOP_APP_URL}/commit/6351f130000000000000000000000000000000bb`,
+      },
+    ],
   },
+  delivery: { kind: 'message', render: renderInsider },
 });
 
 export const vscodeNewRelease = defineNotification({

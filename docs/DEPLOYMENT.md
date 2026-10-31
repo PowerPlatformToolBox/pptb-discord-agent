@@ -30,13 +30,14 @@ openssl rand -hex 32
 
 ## 2. Create a GitHub token
 
-The token is used by `/create-issue` and the daily stars sync.
+The token is used by `/create-issue`, the daily stars sync and the insider build commit list.
 
 1. GitHub → **Settings → Developer settings → Fine-grained tokens → Generate new token**.
 2. **Resource owner**: `PowerPlatformToolBox`. **Repository access**: the repos people can file
    issues in (`desktop-app`, `pptb-web`, `pptb-docs-web`), plus `STARS_REPOSITORY` if it isn't one
    of them.
-3. **Permissions**: *Issues* read and write, *Metadata* read (selected automatically).
+3. **Permissions**: *Issues* read and write, *Metadata* read (selected automatically). Add
+   *Contents* read only if `desktop-app` is private (insider commit list).
 4. Set an expiry and add a calendar reminder to rotate it. Save it as `GITHUB_TOKEN`.
 
 ## 3. Create the Vercel project

@@ -41,7 +41,7 @@ pnpm lint && pnpm format:check && pnpm type-check && pnpm test
   - `settings.ts`: `DISABLED_NOTIFICATIONS` and `NOTIFICATION_ROUTES`.
   - `channels.ts`: channel aliases.
 - `src/sources/github/router.ts`: pure mapping of GitHub webhooks to notification keys
-  (`RELEASE_REPOSITORIES`).
+  (`RELEASE_REPOSITORIES`). `enrich.ts` adds best-effort GitHub API data (insider commit list).
 - `src/sources/platform/envelope.ts`: `/api/events` envelope schema.
 - `src/discord/`: REST client (rate-limit aware) and message clamping to Discord limits.
 - `src/security/signatures.ts`: GitHub HMAC, platform HMAC + timestamp, Discord Ed25519, cron bearer.
@@ -73,7 +73,7 @@ Source of truth is `src/config/environment.ts`; `.env.example` is the documented
 | `DISCORD_GUILD_ID` | Guild (command registration, thread lookup) |
 | `DISCORD_CHANNEL_ADMIN` / `_TOOLS` / `_RELEASES` / `_INSIDER` / `_DISCUSSIONS` / `_STARS` | Channel IDs for the six aliases |
 | `DISCUSSION_THREAD_ROLE_IDS` | Optional, comma-separated Discord role IDs to auto-add their members to GitHub discussion threads |
-| `GITHUB_TOKEN` | GitHub API token (issues, stars sync) |
+| `GITHUB_TOKEN` | GitHub API token (issues, stars sync, insider commit list) |
 | `GITHUB_ORG` | GitHub organization; webhooks from other owners are ignored |
 | `GITHUB_WEBHOOK_SECRET` | GitHub webhook HMAC secret |
 | `STARS_REPOSITORY` | Repo whose star count is shown |

@@ -255,7 +255,9 @@ payload is harmless.
 
 For a new **GitHub** event, add the mapping in
 [`src/sources/github/router.ts`](../src/sources/github/router.ts). To announce releases from
-another repo, add it to `RELEASE_REPOSITORIES` there.
+another repo, add it to `RELEASE_REPOSITORIES` there. Data that needs GitHub API calls is added in
+[`enrich.ts`](../src/sources/github/enrich.ts): the insider card lists the commits since the
+previous insider build (GitHub compare), and falls back to the release notes if that lookup fails.
 
 To add a new **channel alias**:
 - add it to `CHANNEL_ALIASES` in [`channels.ts`](../src/notifications/channels.ts),

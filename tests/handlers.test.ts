@@ -157,7 +157,56 @@ describe('POST /api/github', () => {
     const calls = stubFetch();
     const response = await handleGitHubWebhook(githubRequest('release', releasePayload));
     expect(response.status).toBe(200);
-    expect(calls[0]?.url).toContain(`/channels/${TEST_ENV.DISCORD_CHANNEL_INSIDER}/messages`);
+    expect(calls.some((c) => c.url.includes('api.github.com'))).toBe(true);
+    expect(calls.at(-1)?.url).toContain(`/channels/${TEST_ENV.DISCORD_CHANNEL_INSIDER}/messages`);
+  });
+
+  it('lists the commits since the previous insider build', async () => {
+    const repoUrl = releasePayload.repository.html_url;
+    const calls = stubFetch((url) => {
+      if (url.endsWith('/releases?per_page=20')) {
+        return {
+          body: [
+            { tag_name: 'v1.0.0', html_url: `${repoUrl}/releases/tag/v1.0.0`, prerelease: true },
+            { tag_name: 'v0.9.0', html_url: `${repoUrl}/releases/tag/v0.9.0`, prerelease: true },
+          ].map((release) => ({ ...release, draft: false })),
+        };
+      }
+      if (url.includes('/compare/v0.9.0...v1.0.0')) {
+        return {
+          body: {
+            html_url: `${repoUrl}/compare/v0.9.0...v1.0.0`,
+            total_commits: 1,
+            commits: [
+              {
+                sha: 'abc1234def',
+                html_url: `${repoUrl}/commit/abc1234def`,
+                commit: { message: 'Add things' },
+                parents: [{ sha: 'p' }],
+              },
+            ],
+          },
+        };
+      }
+      return { body: { id: '1' } };
+    });
+
+    const response = await handleGitHubWebhook(githubRequest('release', releasePayload));
+    expect(response.status).toBe(200);
+    const body = calls.at(-1)?.body as { embeds: Array<{ description: string }> };
+    expect(body.embeds[0]?.description).toBe(
+      `• [\`abc1234\`](${repoUrl}/commit/abc1234def) Add things`
+    );
+  });
+
+  it('still announces the insider release when the commit lookup fails', async () => {
+    const calls = stubFetch((url) =>
+      url.includes('api.github.com') ? { status: 403, body: {} } : { body: { id: '1' } }
+    );
+    const response = await handleGitHubWebhook(githubRequest('release', releasePayload));
+    expect(response.status).toBe(200);
+    const body = calls.at(-1)?.body as { embeds: Array<{ description: string }> };
+    expect(body.embeds[0]?.description).toBe('• thing');
   });
 
   it('rejects an invalid signature', async () => {

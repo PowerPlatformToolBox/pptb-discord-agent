@@ -52,6 +52,7 @@ export function routeGitHubEvent(
             tagName: release.tag_name,
             body: release.body ?? '',
             url: release.html_url,
+            branch: release.target_commitish,
           },
         },
       ];

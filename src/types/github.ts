@@ -31,3 +31,23 @@ export interface CreateIssueResult {
   url: string;
   number: number;
 }
+
+export interface GitHubRelease {
+  tag_name: string;
+  html_url: string;
+  draft: boolean;
+  prerelease: boolean;
+}
+
+export interface GitHubCompareCommit {
+  sha: string;
+  html_url: string;
+  commit: { message: string };
+  parents?: Array<{ sha: string }>;
+}
+
+export interface GitHubComparison {
+  html_url: string;
+  total_commits: number;
+  commits: GitHubCompareCommit[];
+}

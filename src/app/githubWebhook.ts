@@ -5,6 +5,7 @@
 import { loadConfig } from '../config/config';
 import { dispatch, type DispatchResult } from '../notifications/dispatcher';
 import { verifyGitHubSignature } from '../security/signatures';
+import { enrichNotification } from '../sources/github/enrich';
 import { routeGitHubEvent } from '../sources/github/router';
 import type { GitHubWebhookPayload } from '../sources/github/types';
 import { createErrorLogObject } from '../utils/errorHelper';
@@ -34,11 +35,13 @@ export async function handleGitHubWebhook(request: Request): Promise<Response> {
   const payload = parseJson(raw) as GitHubWebhookPayload | undefined;
   if (!payload || typeof payload !== 'object') return json(400, { error: 'Invalid JSON' });
 
-  const routed = routeGitHubEvent(event, payload, {
-    org: config.github.org,
-    watchedLabels: config.github.watchedLabels,
-    starsRepository: config.github.starsRepository,
-  });
+  const routed = await Promise.all(
+    routeGitHubEvent(event, payload, {
+      org: config.github.org,
+      watchedLabels: config.github.watchedLabels,
+      starsRepository: config.github.starsRepository,
+    }).map(enrichNotification)
+  );
 
   logger.info('GitHub webhook received', {
     event,

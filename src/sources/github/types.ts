@@ -37,6 +37,7 @@ export interface GitHubWebhookPayload {
     name?: string | null;
     body?: string | null;
     html_url: string;
+    target_commitish?: string;
     draft: boolean;
     prerelease: boolean;
   };
